@@ -1,0 +1,35 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/flutter/ephemeral/
+**/Flutter/ephemeral/
+**/doc/api/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# Secrets and signing (restored from GitHub Actions secrets in CI)
+android/key.properties
+android/local.properties
+**/*.jks
+**/*.keystore
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+.env
+.env.*
+
+# Supabase CLI local state
+supabase/.temp/
+.supabase/
