@@ -165,7 +165,6 @@ class _CowListScreenState extends State<CowListScreen> {
               label: Text(filter),
               selected: isSelected,
               onSelected: (_) => _applyFilter(filter),
-              showCheckmark: false,
               selectedColor: AppConstants.primaryColor.withOpacity(0.12),
               labelStyle: TextStyle(color: isSelected ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal),
             ),

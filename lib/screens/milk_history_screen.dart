@@ -305,7 +305,6 @@ class _MilkHistoryScreenState extends State<MilkHistoryScreen> {
             child: ChoiceChip(
               label: Text(filter),
               selected: isSelected,
-              showCheckmark: false,
               onSelected: (selected) {
                 if (filter == 'Custom' && selected) {
                   _pickDateRange();

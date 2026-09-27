@@ -198,7 +198,6 @@ class _FarmCalendarScreenState extends State<FarmCalendarScreen> {
       avatar: Icon(_getCategoryIcon(value), size: 16, color: isSelected ? AppConstants.primaryColor : context.mutedText),
       label: Text(label, style: TextStyle(fontSize: 13, color: isSelected ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
       selected: isSelected,
-      showCheckmark: false,
       onSelected: (_) => onSelect(value),
       selectedColor: AppConstants.primaryColor.withOpacity(0.12),
     );

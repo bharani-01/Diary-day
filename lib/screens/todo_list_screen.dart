@@ -202,7 +202,6 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                 child: ChoiceChip(
                   label: Text(c),
                   selected: _category == c,
-                  showCheckmark: false,
                   onSelected: (val) => setState(() => _category = c),
                   selectedColor: AppConstants.primaryColor.withOpacity(0.12),
                   labelStyle: TextStyle(color: _category == c ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: _category == c ? FontWeight.w600 : FontWeight.normal),
