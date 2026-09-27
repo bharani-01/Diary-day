@@ -60,7 +60,17 @@ on every push to `main`, on PRs, and on manual runs (Actions â†’ Android build â
 the APK as the `krb-dairy-apk-<run>` artifact. Repository secrets it uses:
 `GOOGLE_SERVICES_JSON_BASE64` (required), and `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
 `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS` (for a release APK; without them it builds a debug APK).
-This is the only verified way to build the app while the local SDK is 3.44.
+This is the only verified way to build the APK.
+
+**Matching local SDK:** Flutter 3.7.12 (the CI version) is unpacked at `D:\flutter-3.7.12\flutter`.
+Use it to verify changes the same way CI does before pushing:
+
+```powershell
+D:\flutter-3.7.12\flutter\bin\flutter.bat pub get
+D:\flutter-3.7.12\flutter\bin\flutter.bat analyze --no-fatal-infos --no-fatal-warnings   # must exit 0
+```
+
+`android/local.properties` still points at `D:\flutter` (3.44), so local Gradle builds use that SDK.
 
 Edge function (requires the Supabase CLI, not currently installed or verified):
 
@@ -71,17 +81,17 @@ supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(Get-Content service-account.jso
 
 **Toolchain status:** the app targets roughly **Flutter 3.7 / Dart 2.19**. The committed
 `pubspec.lock` (sky_engine 0.0.99, collection 1.17.0, meta 1.8.0) and `sdk: '>=2.19.0 <4.0.0'`
-both point there. The only SDK installed on this machine is **Flutter 3.44 / Dart 3.12**, and the
+both point there. The default SDK at `D:\flutter` is **Flutter 3.44 / Dart 3.12**, and the
 project **cannot build on it**: `lib/main.dart` has 4 theme type errors, and locked packages
 (`fl_chart 0.62`, `win32 4.1.4`, `archive 3.4.10`, `cached_network_image 3.2.x`) use APIs removed
-from the newer SDK. Until the owner decides between installing a matching Flutter 3.7.x (for example
-via fvm) and migrating to the current SDK:
+from the newer SDK. Until the owner decides to migrate to the current SDK:
 - write code that compiles on Flutter 3.7 (use `withOpacity`, not `withValues`; no Dart 3 records,
   patterns, or `sealed`/`final class`);
 - don't run `pub get`/`pub add` with the 3.44 SDK and keep the resulting lock. It rewrites
   SDK-pinned packages and, for new dependencies, picks versions that need Dart 3. Back up and
   restore `pubspec.lock`, and pin new dependencies to Dart-2.19-compatible ranges;
-- `dart analyze <files>` works on 3.44 for catching errors in files you touched.
+- verify with the 3.7.12 analyzer above. The 3.44 analyzer accepts newer APIs (for example
+  `ChoiceChip.showCheckmark`) that break the CI build.
 
 ## 4. Repository layout
 
