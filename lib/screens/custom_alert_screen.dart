@@ -5,6 +5,8 @@ import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import '../models/custom_alert.dart';
 import '../models/cow.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
 
 class CustomAlertScreen extends StatefulWidget {
   const CustomAlertScreen({super.key});
@@ -29,7 +31,7 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, ss) => Padding(
           padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
@@ -37,9 +39,9 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-              const Text('Create Reminder', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('New reminder', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               TextField(controller: titleCtrl, decoration: InputDecoration(labelText: 'Title *', prefixIcon: const Icon(Icons.alarm), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).inputDecorationTheme.fillColor)),
               const SizedBox(height: 12),
@@ -62,12 +64,12 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade800,
-                        side: BorderSide(color: Colors.orange.shade300),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: Theme.of(context).dividerColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      child: const Text('⚡ 1 Min'),
+                      child: const Text('+1 min'),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -81,12 +83,12 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade800,
-                        side: BorderSide(color: Colors.orange.shade300),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: Theme.of(context).dividerColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      child: const Text('⚡ 10 Min'),
+                      child: const Text('+10 min'),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -100,12 +102,12 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade800,
-                        side: BorderSide(color: Colors.orange.shade300),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: Theme.of(context).dividerColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      child: const Text('⚡ 1 Hour'),
+                      child: const Text('+1 hour'),
                     ),
                   ),
                 ],
@@ -132,13 +134,13 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                   _getTimeRemainingText(selDate, selTime),
                   style: TextStyle(
                     fontSize: 13,
-                    color: _getTimeRemainingText(selDate, selTime).contains('past') ? Colors.red : Colors.green.shade700,
+                    color: _getTimeRemainingText(selDate, selTime).contains('past') ? AppConstants.dangerColor : context.mutedText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              SwitchListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 12), tileColor: Theme.of(context).cardColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).dividerColor)), secondary: const Icon(Icons.repeat, color: Colors.orange), title: const Text('Recurring'), value: isRec, activeColor: AppConstants.primaryColor, onChanged: (v) => ss(() => isRec = v)),
+              SwitchListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 12), tileColor: Theme.of(context).cardColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).dividerColor)), secondary: const Icon(Icons.repeat), title: const Text('Recurring'), value: isRec, activeColor: AppConstants.primaryColor, onChanged: (v) => ss(() => isRec = v)),
               if (isRec) ...[const SizedBox(height: 12), SegmentedButton<String>(segments: const [ButtonSegment(value: 'daily', label: Text('Daily')), ButtonSegment(value: 'weekly', label: Text('Weekly')), ButtonSegment(value: 'monthly', label: Text('Monthly'))], selected: {freq}, onSelectionChanged: (v) => ss(() => freq = v.first))],
               const SizedBox(height: 12),
               TextField(controller: notesCtrl, maxLines: 2, decoration: InputDecoration(labelText: 'Notes', prefixIcon: const Icon(Icons.note), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), filled: true, fillColor: Theme.of(context).inputDecorationTheme.fillColor)),
@@ -150,7 +152,7 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                     final tStr = '${selTime.hour.toString().padLeft(2,'0')}:${selTime.minute.toString().padLeft(2,'0')}:00';
                     await _db.addCustomAlert(CustomAlert(id: '', cowId: selCow?.id, cowTag: selCow?.tagNumber, title: titleCtrl.text, alertDate: selDate, alertTime: tStr, isRecurring: isRec, frequency: isRec ? freq : null, notes: notesCtrl.text.isEmpty ? null : notesCtrl.text, createdAt: DateTime.now()));
                     final sched = DateTime(selDate.year, selDate.month, selDate.day, selTime.hour, selTime.minute);
-                    if (sched.isAfter(DateTime.now())) { await NotificationService.scheduleNotification(id: titleCtrl.text.hashCode, title: '🔔 ${titleCtrl.text}', body: selCow != null ? 'Cow: ${selCow!.tagNumber}' : 'Farm Reminder', scheduledDate: sched); }
+                    if (sched.isAfter(DateTime.now())) { await NotificationService.scheduleNotification(id: titleCtrl.text.hashCode, title: titleCtrl.text, body: selCow != null ? 'Cow: ${selCow!.tagNumber}' : 'Farm Reminder', scheduledDate: sched); }
                     if (mounted) Navigator.pop(ctx);
                   } catch (e) {
                     if (mounted) {
@@ -158,8 +160,8 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
                     }
                   }
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                child: const Text('Create Reminder', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: primaryButtonStyle(),
+                child: const Text('Create reminder'),
               ),
             ],
           )),
@@ -174,7 +176,7 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
     final diff = scheduled.difference(now);
     
     if (diff.isNegative) {
-      return '⚠️ Selected time is in the past!';
+      return 'Selected time is in the past';
     }
     
     final days = diff.inDays;
@@ -187,51 +189,56 @@ class _CustomAlertScreenState extends State<CustomAlertScreen> {
     if (minutes > 0) parts.add('$minutes min${minutes > 1 ? "s" : ""}');
     
     if (parts.isEmpty) {
-      return '🔔 Reminding in less than a minute!';
+      return 'Reminds you in less than a minute';
     }
-    return '🔔 Reminding in ${parts.join(', ')}';
+    return 'Reminds you in ${parts.join(', ')}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Custom Reminders', style: TextStyle(fontWeight: FontWeight.bold)),   elevation: 0),
+      appBar: AppBar(title: const Text('Reminders'), elevation: 0),
       body: StreamBuilder<List<CustomAlert>>(
         stream: _db.getCustomAlertsStream(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.waiting) return const PremiumLoading(message: 'Loading reminders…');
           final alerts = (snapshot.data ?? []).where((a) => !a.isDismissed).toList();
-          if (alerts.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey.shade300), const SizedBox(height: 16), Text('No active reminders', style: TextStyle(fontSize: 16, color: Theme.of(context).cardColor))]));
+          if (alerts.isEmpty) return const EmptyState(icon: Icons.notifications_off_outlined, title: 'No active reminders', message: 'Create one with the + button.');
           return ListView.builder(
-            padding: const EdgeInsets.all(16), itemCount: alerts.length,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 88), itemCount: alerts.length,
             itemBuilder: (context, i) {
               final a = alerts[i];
               final overdue = a.alertDate.isBefore(DateTime.now());
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(16), border: overdue ? Border.all(color: Colors.red.shade200) : null, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(backgroundColor: overdue ? Colors.red.shade50 : Colors.orange.shade50, child: Icon(a.isRecurring ? Icons.repeat : Icons.alarm, color: overdue ? Colors.red : Colors.orange)),
-                  title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const SizedBox(height: 4),
-                    Text('${DateFormat('MMM d, y').format(a.alertDate)}${a.alertTime != null ? ' • ${a.alertTime!.substring(0,5)}' : ''}', style: TextStyle(fontSize: 12, color: overdue ? Colors.red : Colors.grey.shade600)),
-                    if (a.cowTag != null) Text('🐄 ${a.cowTag}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-                    if (a.isRecurring) Text('🔄 ${a.frequency}', style: const TextStyle(fontSize: 11, color: Colors.orange)),
-                  ]),
-                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                    IconButton(icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22), onPressed: () => _db.dismissCustomAlert(a.id)),
-                    IconButton(icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 22), onPressed: () => _db.deleteCustomAlert(a.id)),
-                  ]),
+              final meta = <String>[
+                '${DateFormat('MMM d, y').format(a.alertDate)}${a.alertTime != null ? ' · ${a.alertTime!.substring(0,5)}' : ''}',
+                if (a.cowTag != null) 'Cow ${a.cowTag}',
+                if (a.isRecurring) 'Repeats ${a.frequency}',
+              ];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AppCard(
+                  padding: EdgeInsets.zero,
+                  borderColor: overdue ? AppConstants.dangerColor.withOpacity(0.4) : null,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.fromLTRB(16, 6, 4, 6),
+                    leading: IconTile(a.isRecurring ? Icons.repeat : Icons.alarm, color: overdue ? AppConstants.dangerColor : null),
+                    title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(meta.join('  ·  '), style: TextStyle(fontSize: 12, color: overdue ? AppConstants.dangerColor : context.mutedText)),
+                    ),
+                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(tooltip: 'Mark done', icon: const Icon(Icons.check_circle_outline, color: AppConstants.successColor, size: 22), onPressed: () => _db.dismissCustomAlert(a.id)),
+                      IconButton(tooltip: 'Delete', icon: Icon(Icons.delete_outline, color: context.mutedText, size: 22), onPressed: () => _db.deleteCustomAlert(a.id)),
+                    ]),
+                  ),
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(onPressed: _showAddDialog, backgroundColor: AppConstants.primaryColor, child: const Icon(Icons.add, color: Colors.white)),
+      floatingActionButton: FloatingActionButton(onPressed: _showAddDialog, tooltip: 'New reminder', child: const Icon(Icons.add)),
     );
   }
 }

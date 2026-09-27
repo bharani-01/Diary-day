@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 
 class ExpenseDetailScreen extends StatelessWidget {
   final Expense expense;
@@ -11,98 +12,79 @@ class ExpenseDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Expense Details'),
-        
-        
+        title: const Text('Expense'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status Banner
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.red.shade100),
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.outbound, color: Colors.red, size: 48),
-                  const SizedBox(height: 8),
-                  const Text('Expense Recorded', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Text(
-                    '₹ ${expense.amount.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+        padding: const EdgeInsets.all(AppConstants.pagePadding),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppCard(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const StatusPill(label: 'Expense', color: AppConstants.dangerColor, icon: Icons.north_east),
+                      const SizedBox(height: 12),
+                      Text(
+                        '₹ ${expense.amount.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
+                ),
+                const SizedBox(height: 12),
 
-            // Info Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: Column(
-                children: [
-                  _detailRow(context, Icons.label_important_outline, 'Item Name', expense.title),
-                  const Divider(height: 32),
-                  _detailRow(context, Icons.category_outlined, 'Category', expense.category),
-                  const Divider(height: 32),
-                  _detailRow(context, Icons.calendar_today_outlined, 'Expense Date', DateFormat('EEEE, MMM d, y').format(expense.expenseDate)),
-                  
-                  if (expense.notes != null && expense.notes!.isNotEmpty) ...[
-                    const Divider(height: 32),
-                    _detailRow(context, Icons.notes, 'Notes', expense.notes!),
-                  ],
-                ],
-              ),
+                AppCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Column(
+                    children: [
+                      _detailRow(context, Icons.label_outline, 'Item', expense.title),
+                      const Divider(height: 1),
+                      _detailRow(context, Icons.category_outlined, 'Category', expense.category),
+                      const Divider(height: 1),
+                      _detailRow(context, Icons.calendar_today_outlined, 'Expense date', DateFormat('EEEE, MMM d, y').format(expense.expenseDate)),
+                      
+                      if (expense.notes != null && expense.notes!.isNotEmpty) ...[
+                        const Divider(height: 1),
+                        _detailRow(context, Icons.notes, 'Notes', expense.notes!),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-            
-            const SizedBox(height: 40),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back to List'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _detailRow(BuildContext context, IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 24, color: Colors.red.shade700),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: context.mutedText),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 12, color: context.mutedText)),
+                const SizedBox(height: 2),
+                Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

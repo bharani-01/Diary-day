@@ -12,6 +12,7 @@ import '../widgets/global_error_view.dart';
 import 'payment_detail_screen.dart';
 import 'expense_detail_screen.dart';
 import '../widgets/premium_loading.dart';
+import '../widgets/app_ui.dart';
 import 'package:provider/provider.dart';
 import '../services/privacy_provider.dart';
 
@@ -162,10 +163,11 @@ class _PaymentsExpensesScreenState extends State<PaymentsExpensesScreen> with Si
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppConstants.primaryColor,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: context.mutedText,
           indicatorColor: AppConstants.primaryColor,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
           tabs: const [
-            Tab(text: 'Payments Received'),
+            Tab(text: 'Payments received'),
             Tab(text: 'Expenses'),
           ],
         ),
@@ -179,7 +181,7 @@ class _PaymentsExpensesScreenState extends State<PaymentsExpensesScreen> with Si
               onRetry: () => setState(() {}),
             );
           }
-          if (!snapshot.hasData) return const PremiumLoading(message: 'Analyzing financials...');
+          if (!snapshot.hasData) return const PremiumLoading(message: 'Loading financials…');
 
           final now = DateTime.now();
           final allPayments = snapshot.data!['payments'] as List<Payment>;
@@ -240,18 +242,8 @@ class _PaymentsExpensesScreenState extends State<PaymentsExpensesScreen> with Si
           return TabBarView(
             controller: _tabController,
             children: [
-              Column(
-                children: [
-                  _buildProfitCard(),
-                  _buildHistorySection(_payments, 'Payments', _getTotalPayments, Colors.teal),
-                ],
-              ),
-              Column(
-                children: [
-                  _buildProfitCard(),
-                  _buildHistorySection(_expenses, 'Expenses', _getTotalExpenses, Colors.red),
-                ],
-              ),
+              _buildHistorySection(_payments, 'Payments', _getTotalPayments, AppConstants.successColor),
+              _buildHistorySection(_expenses, 'Expenses', _getTotalExpenses, AppConstants.dangerColor),
             ],
           );
         },
@@ -263,143 +255,125 @@ class _PaymentsExpensesScreenState extends State<PaymentsExpensesScreen> with Si
             builder: (_) => _tabController.index == 0 ? const AddPaymentScreen() : const AddExpenseScreen(),
           ),
         ),
-        backgroundColor: AppConstants.primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(_tabController.index == 0 ? 'Add Payment' : 'Add Expense', style: const TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.add),
+        label: Text(_tabController.index == 0 ? 'Add payment' : 'Add expense'),
       ),
     );
   }
 
-  Widget _buildProfitCard() {
+  Widget _buildSummaryCard(String title, Function() totalGetter) {
+    final hide = Provider.of<PrivacyProvider>(context).hideBalances;
     final paymentsTotal = _getTotalPayments();
     final expensesTotal = _getTotalExpenses();
     final netProfit = paymentsTotal - expensesTotal;
     final isProfit = netProfit >= 0;
     final isLifetime = _filter == FinancialFilter.lifetime;
+    final isPaymentTab = title == 'Payments';
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isProfit 
-              ? [const Color(0xFF00796B), const Color(0xFF00897B)]
-              : [Colors.red.shade800, Colors.red.shade500],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: (isProfit ? Colors.teal : Colors.red).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
+    Widget metric(String label, String value, Color valueColor) => Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                isLifetime ? 'LIFETIME NET PROFIT' : 'MONTHLY NET PROFIT', 
-                style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)
-              ),
-              const SizedBox(height: 12),
-              Text(
-                Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '${isProfit ? "+" : "-"}₹${netProfit.toInt().abs()}',
-                style: TextStyle(color: Theme.of(context).cardColor, fontSize: 36, fontWeight: FontWeight.bold),
+              Text(label, style: TextStyle(color: context.mutedText, fontSize: 12)),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value, style: TextStyle(color: valueColor, fontSize: 22, fontWeight: FontWeight.w700)),
               ),
             ],
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Icon(isProfit ? Icons.trending_up : Icons.trending_down, color: Theme.of(context).cardColor, size: 40),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: AppCard(
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              metric(
+                isLifetime ? 'Net profit · lifetime' : 'Net profit · this month',
+                hide ? '₹***' : '${isProfit ? "+" : "-"}₹${netProfit.toInt().abs()}',
+                isProfit ? AppConstants.successColor : AppConstants.dangerColor,
+              ),
+              VerticalDivider(width: 24, color: Theme.of(context).dividerColor),
+              metric(
+                isLifetime
+                    ? (isPaymentTab ? 'Total payments' : 'Total expenses')
+                    : (isPaymentTab ? 'Payments this month' : 'Expenses this month'),
+                hide ? '₹***' : '₹${totalGetter().toInt()}',
+                Theme.of(context).colorScheme.onSurface,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildHistorySection(List<dynamic> items, String title, Function() totalGetter, Color color) {
-    bool isPaymentTab = title == 'Payments';
-    final isLifetime = _filter == FinancialFilter.lifetime;
-
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Summary Card for Total
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: color.withOpacity(0.1)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isLifetime 
-                    ? (isPaymentTab ? 'Total Payments' : 'Total Expenses')
-                    : (isPaymentTab ? 'Payments this month' : 'Expenses this month'),
-                  style: TextStyle(color: color.withOpacity(0.7), fontSize: 13, fontWeight: FontWeight.w500),
+    final hide = Provider.of<PrivacyProvider>(context).hideBalances;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildSummaryCard(title, totalGetter)),
+            if (items.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: EmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'No ${title.toLowerCase()} yet',
+                  message: 'Records you add will appear here.',
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '₹${totalGetter().toInt()}',
-                  style: TextStyle(color: color, fontSize: 32, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: items.isEmpty
-                ? Center(child: Text('No $title records yet.', style: const TextStyle(color: Colors.grey)))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
                       final item = items[index];
                       final isPayment = item is Payment;
                       final date = isPayment ? item.paymentDate : item.expenseDate;
-                      
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: ListTile(
-                          onTap: () {
-                            if (isPayment) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentDetailScreen(payment: item)));
-                            } else {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseDetailScreen(expense: item)));
-                            }
-                          },
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                            child: Icon(Icons.currency_rupee, color: Theme.of(context).cardColor, size: 16),
-                          ),
-                          title: Text(isPayment ? item.title : (item.title.isNotEmpty ? item.title : item.category), 
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          subtitle: Text(DateFormat('MMM d, yyyy').format(date), style: TextStyle(color: Theme.of(context).cardColor, fontSize: 12)),
-                          trailing: Text(
-                            Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '${isPayment ? "+" : "-"}₹${item.amount.toInt()}',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: AppCard(
+                          padding: EdgeInsets.zero,
+                          child: ListTile(
+                            onTap: () {
+                              if (isPayment) {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentDetailScreen(payment: item)));
+                              } else {
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => ExpenseDetailScreen(expense: item)));
+                              }
+                            },
+                            leading: IconTile(isPayment ? Icons.south_west : Icons.north_east, color: color, size: 36),
+                            title: Text(isPayment ? item.title : (item.title.isNotEmpty ? item.title : item.category),
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                            subtitle: Text(
+                              isPayment ? DateFormat('MMM d, yyyy').format(date) : '${item.category} · ${DateFormat('MMM d, yyyy').format(date)}',
+                              style: TextStyle(color: context.mutedText, fontSize: 12),
+                            ),
+                            trailing: Text(
+                              hide ? '₹***' : '${isPayment ? "+" : "-"}₹${item.amount.toInt()}',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: color),
+                            ),
                           ),
                         ),
                       );
                     },
+                    childCount: items.length,
                   ),
-          ),
-        ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
+

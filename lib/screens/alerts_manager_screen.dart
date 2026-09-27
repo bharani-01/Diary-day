@@ -10,6 +10,7 @@ import '../models/cow.dart';
 import '../widgets/global_drawer.dart';
 import 'calving_alerts_screen.dart';
 import '../widgets/premium_loading.dart';
+import '../widgets/app_ui.dart';
 
 class AlertsManagerScreen extends StatefulWidget {
   final Function(int) onMenuPressed;
@@ -105,8 +106,7 @@ class _AlertsManagerScreenState extends State<AlertsManagerScreen> with SingleTi
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_milkReminders ? 'Reminders scheduled! ✅' : 'Reminders disabled.'),
-          backgroundColor: _milkReminders ? Colors.green : Colors.grey,
+          content: Text(_milkReminders ? 'Reminders scheduled' : 'Reminders disabled'),
         ),
       );
     }
@@ -117,21 +117,19 @@ class _AlertsManagerScreenState extends State<AlertsManagerScreen> with SingleTi
     final lp = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: GlobalDrawer(currentIndex: 4, onTabSelected: widget.onMenuPressed),
       appBar: AppBar(
-        title: const Text('Farm Alerts & Reminders'),
-        
+        title: const Text('Alerts & reminders'),
         elevation: 0,
-        
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppConstants.primaryColor,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: context.mutedText,
           indicatorColor: AppConstants.primaryColor,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
           tabs: const [
-             Tab(icon: Icon(Icons.notifications_active), text: 'Upcoming'),
-             Tab(icon: Icon(Icons.settings), text: 'Settings'),
+             Tab(text: 'Upcoming'),
+             Tab(text: 'Settings'),
           ],
         ),
       ),
@@ -146,111 +144,104 @@ class _AlertsManagerScreenState extends State<AlertsManagerScreen> with SingleTi
   }
 
   Widget _buildUpcomingTab() {
-    if (_isLoading) return const PremiumLoading(message: 'Checking for upcoming events...');
+    if (_isLoading) return const PremiumLoading(message: 'Checking upcoming events…');
     if (_upcomingBreedingAlerts.isEmpty) {
-      return const Center(child: Text('No upcoming alerts scheduled.'));
+      return const EmptyState(icon: Icons.notifications_none, title: 'No upcoming alerts scheduled');
     }
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CalvingAlertsScreen(onMenuPressed: widget.onMenuPressed))),
-            icon: const Icon(Icons.child_care),
-            label: const Text('View Detailed Maternity Calendar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.pinkAccent.withOpacity(0.1),
-              foregroundColor: Colors.pinkAccent,
-              elevation: 0,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-      itemCount: _upcomingBreedingAlerts.length,
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _upcomingBreedingAlerts.length + 1,
       itemBuilder: (context, index) {
-        final alert = _upcomingBreedingAlerts[index];
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Theme.of(context).dividerColor)),
-          child: ListTile(
-            leading: CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.notification_important, color: Colors.white)),
-            title: Text('Cow ${alert['tag']} - ${alert['event']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Alert on: ${DateFormat('MMM d, y').format(alert['date'])}'),
-            trailing: const Icon(Icons.chevron_right, size: 16),
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: AppCard(
+              padding: EdgeInsets.zero,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CalvingAlertsScreen(onMenuPressed: widget.onMenuPressed))),
+              child: ListTile(
+                leading: const IconTile(Icons.child_care, color: AppConstants.primaryColor),
+                title: const Text('Calving calendar', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('Expected deliveries with photos and dates', style: TextStyle(fontSize: 12, color: context.mutedText)),
+                trailing: Icon(Icons.chevron_right, color: context.mutedText),
+              ),
+            ),
+          );
+        }
+        final alert = _upcomingBreedingAlerts[index - 1];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AppCard(
+            padding: EdgeInsets.zero,
+            child: ListTile(
+              leading: const IconTile(Icons.notifications_none, color: AppConstants.warningColor),
+              title: Text('Cow ${alert['tag']} · ${alert['event']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('Alert on ${DateFormat('MMM d, y').format(alert['date'])}', style: TextStyle(fontSize: 12, color: context.mutedText)),
+            ),
           ),
         );
       },
-    ),
-  ),
-],
-);
-}
+    );
+  }
 
   Widget _buildSettingsTab(LanguageProvider lp) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Daily Reminders', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const SizedBox(height: 16),
-          SwitchListTile(
-            title: const Text('Milk Shift Reminders'),
-            subtitle: const Text('Remind me to enter milk data daily'),
-            value: _milkReminders, 
-            activeColor: AppConstants.primaryColor,
-            onChanged: (val) => setState(() => _milkReminders = val),
-          ),
-          const Divider(),
-          ListTile(
-            title: const Text('Morning Shift Time'),
-            trailing: Text(_morningTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold, color: AppConstants.primaryColor)),
-            onTap: () async {
-              final picked = await showTimePicker(context: context, initialTime: _morningTime);
-              if (picked != null) setState(() => _morningTime = picked);
-            },
-          ),
-          ListTile(
-            title: const Text('Evening Shift Time'),
-            trailing: Text(_eveningTime.format(context), style: const TextStyle(fontWeight: FontWeight.bold, color: AppConstants.primaryColor)),
-            onTap: () async {
-              final picked = await showTimePicker(context: context, initialTime: _eveningTime);
-              if (picked != null) setState(() => _eveningTime = picked);
-            },
-          ),
-          const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saveSettings,
-              style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SectionHeader('Daily reminders'),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text('Milk shift reminders'),
+                  subtitle: Text('Remind me to enter milk data daily', style: TextStyle(fontSize: 12, color: context.mutedText)),
+                  value: _milkReminders, 
+                  activeColor: AppConstants.primaryColor,
+                  onChanged: (val) => setState(() => _milkReminders = val),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('Morning shift time'),
+                  trailing: Text(_morningTime.format(context), style: const TextStyle(fontWeight: FontWeight.w600, color: AppConstants.primaryColor)),
+                  onTap: () async {
+                    final picked = await showTimePicker(context: context, initialTime: _morningTime);
+                    if (picked != null) setState(() => _morningTime = picked);
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  title: const Text('Evening shift time'),
+                  trailing: Text(_eveningTime.format(context), style: const TextStyle(fontWeight: FontWeight.w600, color: AppConstants.primaryColor)),
+                  onTap: () async {
+                    final picked = await showTimePicker(context: context, initialTime: _eveningTime);
+                    if (picked != null) setState(() => _eveningTime = picked);
+                  },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 32),
-          const Divider(),
           const SizedBox(height: 16),
-          const Text('Advanced Options', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey)),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 0,
-            color: Colors.blue.shade50,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.blue.shade100)),
+          ElevatedButton(
+            onPressed: _saveSettings,
+            style: primaryButtonStyle(),
+            child: const Text('Apply changes'),
+          ),
+          const SizedBox(height: AppConstants.sectionGap),
+          const SectionHeader('Troubleshooting'),
+          AppCard(
+            padding: EdgeInsets.zero,
+            onTap: () async {
+              await NotificationService.showInstantTestNotification();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Test notification sent')));
+              }
+            },
             child: ListTile(
-              leading: const Icon(Icons.bug_report, color: Colors.blue),
-              title: const Text('Send Test Notification', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Tap to check if notifications work on your device'),
-              onTap: () async {
-                await NotificationService.showInstantTestNotification();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Test Notification Sent!')));
-                }
-              },
+              leading: const IconTile(Icons.notifications_active_outlined),
+              title: const Text('Send test notification', style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text('Check that notifications work on this device', style: TextStyle(fontSize: 12, color: context.mutedText)),
             ),
           ),
         ],
@@ -258,3 +249,4 @@ class _AlertsManagerScreenState extends State<AlertsManagerScreen> with SingleTi
     );
   }
 }
+

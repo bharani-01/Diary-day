@@ -4,6 +4,8 @@ import '../constants.dart';
 import '../services/database_service.dart';
 import '../models/monthly_budget.dart';
 import '../models/expense.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
 
 class BudgetManagerScreen extends StatefulWidget {
   const BudgetManagerScreen({super.key});
@@ -55,14 +57,13 @@ class _BudgetManagerScreenState extends State<BudgetManagerScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Set Budget: $category'),
+        title: Text('Budget for $category'),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: InputDecoration(prefixText: '₹ ', labelText: 'Monthly Budget', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(prefixText: '₹ ', labelText: 'Monthly budget', border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius))),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -93,33 +94,30 @@ class _BudgetManagerScreenState extends State<BudgetManagerScreen> {
     final totalSpent = _expenses.fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text('Budget — $monthName', style: const TextStyle(fontWeight: FontWeight.bold)),   elevation: 0),
+      appBar: AppBar(title: Text('Budget · $monthName'), elevation: 0),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const PremiumLoading(message: 'Loading budget…')
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.pagePadding),
               child: Column(
                 children: [
                   // Summary Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [AppConstants.primaryColor, Colors.teal.shade700]),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _summaryItem('Budget', '₹${totalBudget.toStringAsFixed(0)}', Colors.white),
-                        Container(width: 1, height: 40, color: Colors.white38),
-                        _summaryItem('Spent', '₹${totalSpent.toStringAsFixed(0)}', totalSpent > totalBudget && totalBudget > 0 ? Colors.red.shade200 : Colors.white),
-                        Container(width: 1, height: 40, color: Colors.white38),
-                        _summaryItem('Left', '₹${(totalBudget - totalSpent).toStringAsFixed(0)}', (totalBudget - totalSpent) < 0 ? Colors.red.shade200 : Colors.greenAccent),
-                      ],
+                  AppCard(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        children: [
+                          Expanded(child: _summaryItem('Budget', '₹${totalBudget.toStringAsFixed(0)}', Theme.of(context).colorScheme.onSurface)),
+                          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
+                          Expanded(child: _summaryItem('Spent', '₹${totalSpent.toStringAsFixed(0)}', totalSpent > totalBudget && totalBudget > 0 ? AppConstants.dangerColor : Theme.of(context).colorScheme.onSurface)),
+                          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
+                          Expanded(child: _summaryItem('Left', '₹${(totalBudget - totalSpent).toStringAsFixed(0)}', (totalBudget - totalSpent) < 0 ? AppConstants.dangerColor : AppConstants.successColor)),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppConstants.sectionGap),
+                  const SectionHeader('Categories · tap to set a budget'),
                   // Category wise
                   ..._categories.map((cat) {
                     final budget = _getBudgetForCategory(cat);
@@ -127,16 +125,10 @@ class _BudgetManagerScreenState extends State<BudgetManagerScreen> {
                     final budgetAmt = budget?.budgetAmount ?? 0;
                     final progress = budgetAmt > 0 ? (spent / budgetAmt).clamp(0.0, 1.5) : 0.0;
                     final isOverBudget = budgetAmt > 0 && spent > budgetAmt;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(14),
-                        border: isOverBudget ? Border.all(color: Colors.red.shade200) : null,
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
-                      ),
-                      child: InkWell(
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: AppCard(
+                        borderColor: isOverBudget ? AppConstants.dangerColor.withOpacity(0.4) : null,
                         onTap: () => _showSetBudgetDialog(cat),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,18 +136,18 @@ class _BudgetManagerScreenState extends State<BudgetManagerScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(cat, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                Text(budgetAmt > 0 ? '₹${spent.toStringAsFixed(0)} / ₹${budgetAmt.toStringAsFixed(0)}' : spent > 0 ? '₹${spent.toStringAsFixed(0)} spent' : 'Tap to set', style: TextStyle(fontSize: 12, color: isOverBudget ? Colors.red : Colors.grey.shade600)),
+                                Expanded(child: Text(cat, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+                                Text(budgetAmt > 0 ? '₹${spent.toStringAsFixed(0)} / ₹${budgetAmt.toStringAsFixed(0)}' : spent > 0 ? '₹${spent.toStringAsFixed(0)} spent' : 'Set budget', style: TextStyle(fontSize: 12, color: isOverBudget ? AppConstants.dangerColor : context.mutedText)),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(3),
                               child: LinearProgressIndicator(
                                 value: progress.clamp(0.0, 1.0),
-                                minHeight: 8,
+                                minHeight: 6,
                                 backgroundColor: Theme.of(context).dividerColor,
-                                valueColor: AlwaysStoppedAnimation(isOverBudget ? Colors.red : progress > 0.8 ? Colors.orange : AppConstants.primaryColor),
+                                valueColor: AlwaysStoppedAnimation(isOverBudget ? AppConstants.dangerColor : progress > 0.8 ? AppConstants.warningColor : AppConstants.primaryColor),
                               ),
                             ),
                           ],
@@ -172,9 +164,9 @@ class _BudgetManagerScreenState extends State<BudgetManagerScreen> {
   Widget _summaryItem(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
+        Text(label, style: TextStyle(color: context.mutedText, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 18))),
       ],
     );
   }

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../services/database_service.dart';
 import '../models/payment.dart';
+import '../widgets/app_ui.dart';
 
 class AddPaymentScreen extends StatefulWidget {
   const AddPaymentScreen({super.key});
@@ -140,7 +141,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Payment Category', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Payment category', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
@@ -158,13 +159,13 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
               const SizedBox(height: 16),
 
               if (_selectedCategory == 'Aavin Payment') ...[
-                const Text('Billing Period (Optional)', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Billing period (optional)', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _pickPeriod,
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(AppConstants.controlRadius), border: Border.all(color: Theme.of(context).dividerColor)),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -181,14 +182,14 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                 controller: _amountController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: 'Amount Received (₹)', border: OutlineInputBorder(), prefixText: '₹ ', fillColor: Theme.of(context).inputDecorationTheme.fillColor, filled: true),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppConstants.primaryColor),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 16),
 
               ListTile(
                 tileColor: Theme.of(context).cardColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).dividerColor)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius), side: BorderSide(color: Theme.of(context).dividerColor)),
                 title: const Text('Received Date'),
                 subtitle: Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
                 trailing: const Icon(Icons.calendar_today),
@@ -205,13 +206,8 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _isSaving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Save Payment Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                style: primaryButtonStyle(),
+                child: _isSaving ? const ButtonSpinner() : const Text('Save payment'),
               ),
             ],
           ),

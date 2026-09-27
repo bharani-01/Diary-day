@@ -4,6 +4,7 @@ import '../constants.dart';
 import '../services/database_service.dart';
 import '../models/expense.dart';
 import '../models/cow.dart';
+import '../widgets/app_ui.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -98,7 +99,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Expense Category', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Expense category', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
@@ -117,13 +118,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 controller: _amountController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: 'Amount Spent (₹)', border: OutlineInputBorder(), prefixText: '₹ ', fillColor: Theme.of(context).inputDecorationTheme.fillColor, filled: true),
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.red),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               ListTile(
                 tileColor: Theme.of(context).cardColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).dividerColor)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius), side: BorderSide(color: Theme.of(context).dividerColor)),
                 title: const Text('Expense Date'),
                 subtitle: Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
                 trailing: const Icon(Icons.calendar_today),
@@ -139,7 +140,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   border: const OutlineInputBorder(),
                   fillColor: Theme.of(context).inputDecorationTheme.fillColor, filled: true,
                   helperText: 'Track this expense against a specific cow',
-                  helperStyle: TextStyle(color: Theme.of(context).cardColor, fontSize: 11),
+                  helperStyle: TextStyle(color: context.mutedText, fontSize: 12),
                 ),
                 items: [
                   const DropdownMenuItem<Cow?>(value: null, child: Text('None — General Expense')),
@@ -150,9 +151,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 16),
               // --- NEW: Recurring Toggle ---
               Container(
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)),
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(AppConstants.controlRadius), border: Border.all(color: Theme.of(context).dividerColor)),
                 child: SwitchListTile(
-                  secondary: Icon(Icons.repeat, color: _isRecurring ? Colors.orange : Colors.grey),
+                  secondary: Icon(Icons.repeat, color: _isRecurring ? AppConstants.primaryColor : context.mutedText),
                   title: const Text('Recurring Expense'),
                   subtitle: Text(_isRecurring ? 'Will auto-create ${_frequency}' : 'One-time expense', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                   value: _isRecurring,
@@ -181,13 +182,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _isSaving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Save Expense Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                style: primaryButtonStyle(),
+                child: _isSaving ? const ButtonSpinner() : const Text('Save expense'),
               ),
             ],
           ),

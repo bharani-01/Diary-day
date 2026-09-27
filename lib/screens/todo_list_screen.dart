@@ -4,6 +4,24 @@ import '../models/todo.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
+
+Color _priorityColor(TodoPriority p) {
+  switch (p) {
+    case TodoPriority.high: return AppConstants.dangerColor;
+    case TodoPriority.medium: return AppConstants.warningColor;
+    case TodoPriority.low: return const Color(0xFF64748B);
+  }
+}
+
+String _priorityLabel(TodoPriority p) {
+  switch (p) {
+    case TodoPriority.high: return 'Urgent';
+    case TodoPriority.medium: return 'Important';
+    case TodoPriority.low: return 'Normal';
+  }
+}
 
 class TodoListScreen extends StatefulWidget {
   const TodoListScreen({super.key});
@@ -18,124 +36,98 @@ class _TodoListScreenState extends State<TodoListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       appBar: AppBar(
-        title: const Text('Farm Task Manager', style: TextStyle(fontWeight: FontWeight.bold)),
-        
+        title: const Text('Tasks'),
         elevation: 0,
-        
       ),
       body: StreamBuilder<List<Todo>>(
         stream: _db.getTodosStream(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) return const PremiumLoading(message: 'Loading tasks…');
           
           final todos = snapshot.data!;
           if (todos.isEmpty) return _buildEmptyState();
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
-            itemCount: todos.length,
-            itemBuilder: (context, index) => _buildTaskCard(todos[index]),
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                itemCount: todos.length,
+                itemBuilder: (context, index) => _buildTaskCard(todos[index]),
+              ),
+            ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddTaskSheet(context),
-        backgroundColor: AppConstants.primaryColor,
-        icon: const Icon(Icons.add_task, color: Colors.white),
-        label: Text('Add New Task', style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add_task),
+        label: const Text('Add task'),
       ),
     );
   }
 
   Widget _buildTaskCard(Todo todo) {
-    final Color priorityColor = _getPriorityColor(todo.priority);
-    final String priorityText = _getPriorityLabel(todo.priority);
+    final Color priorityColor = _priorityColor(todo.priority);
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 4))],
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        padding: const EdgeInsets.fromLTRB(8, 8, 4, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Priority Bar
-            Container(
-              height: 4,
-              width: double.infinity,
-              color: priorityColor,
+            // Checkbox Area
+            IconButton(
+              tooltip: 'Mark done',
+              onPressed: () async {
+                NotificationService.cancelTaskReminders(todo.id);
+                await Future.delayed(const Duration(milliseconds: 300));
+                _db.deleteTodo(todo.id);
+              },
+              icon: Icon(Icons.radio_button_unchecked, color: context.mutedText),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Checkbox Area
-                  InkWell(
-                    onTap: () async {
-                      NotificationService.cancelTaskReminders(todo.id);
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      _db.deleteTodo(todo.id);
-                    },
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppConstants.primaryColor, width: 2),
-                      ),
-                      child: const Icon(Icons.check, size: 18, color: Colors.transparent),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Content Area
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 4),
+            // Content Area
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(todo.task, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(todo.task, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            _buildTag(todo.category ?? 'Task', Colors.blue),
-                            const SizedBox(width: 8),
-                            _buildTag(priorityText, priorityColor),
-                          ],
-                        ),
-                        if (todo.startTime != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.access_time_filled, size: 14, color: Colors.blue.shade700),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Scheduled: ${DateFormat('hh:mm a').format(todo.startTime!)} ${todo.endTime != null ? " - ${DateFormat('hh:mm a').format(todo.endTime!)}" : ""}',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue.shade700),
-                                ),
-                              ],
-                            ),
+                        StatusPill(label: _priorityLabel(todo.priority), color: priorityColor),
+                        StatusPill(label: todo.category ?? 'Task', color: const Color(0xFF64748B)),
+                        if (todo.startTime != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.schedule, size: 14, color: context.mutedText),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${DateFormat('hh:mm a').format(todo.startTime!)}${todo.endTime != null ? " – ${DateFormat('hh:mm a').format(todo.endTime!)}" : ""}',
+                                style: TextStyle(fontSize: 12, color: context.mutedText),
+                              ),
+                            ],
                           ),
-                        ],
                       ],
                     ),
-                  ),
-                  // Delete Button
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.red.shade300, size: 20),
-                    onPressed: () => _db.deleteTodo(todo.id),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ),
+            // Delete Button
+            IconButton(
+              tooltip: 'Delete',
+              icon: Icon(Icons.delete_outline, color: context.mutedText, size: 20),
+              onPressed: () => _db.deleteTodo(todo.id),
             ),
           ],
         ),
@@ -143,41 +135,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
     );
   }
 
-  Widget _buildTag(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(label.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color)),
-    );
-  }
-
-  Color _getPriorityColor(TodoPriority p) {
-    switch (p) {
-      case TodoPriority.high: return Colors.red.shade400;
-      case TodoPriority.medium: return Colors.orange.shade400;
-      case TodoPriority.low: return Colors.green.shade400;
-    }
-  }
-
-  String _getPriorityLabel(TodoPriority p) {
-    switch (p) {
-      case TodoPriority.high: return 'Urgent';
-      case TodoPriority.medium: return 'Important';
-      case TodoPriority.low: return 'Normal';
-    }
-  }
-
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.assignment_turned_in, size: 80, color: Colors.grey.shade200),
-          const SizedBox(height: 16),
-          const Text('No pending tasks!', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          const Text('Tap "+" to add a farm chore', style: TextStyle(color: Colors.grey, fontSize: 12)),
-        ],
-      ),
+    return const EmptyState(
+      icon: Icons.task_alt,
+      title: 'No pending tasks',
+      message: 'Use Add task to schedule a farm chore.',
     );
   }
 
@@ -212,23 +174,25 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Create New Task', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
+          Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          const Text('New task', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 16),
           TextField(
             controller: _controller,
             autofocus: true,
             decoration: AppConstants.inputDecoration('What needs to be done? (e.g. Check Cow #102)'),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           
-          const Text('Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 12),
+          const Text('Category', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          const SizedBox(height: 8),
           SizedBox(
             height: 40,
             child: ListView(
@@ -238,94 +202,72 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                 child: ChoiceChip(
                   label: Text(c),
                   selected: _category == c,
+                  showCheckmark: false,
                   onSelected: (val) => setState(() => _category = c),
-                  selectedColor: AppConstants.primaryColor.withOpacity(0.2),
-                  labelStyle: TextStyle(color: _category == c ? AppConstants.primaryColor : Colors.grey, fontWeight: FontWeight.bold),
+                  selectedColor: AppConstants.primaryColor.withOpacity(0.12),
+                  labelStyle: TextStyle(color: _category == c ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: _category == c ? FontWeight.w600 : FontWeight.normal),
                 ),
               )).toList(),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Priority', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 12),
+                    const Text('Priority', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 4),
                     DropdownButton<TodoPriority>(
                       value: _priority,
                       isExpanded: true,
                       underline: const SizedBox(),
                       items: TodoPriority.values.map((p) => DropdownMenuItem(
                         value: p, 
-                        child: Text(_getPriorityLabel(p), style: TextStyle(color: _getPriorityColor(p))),
+                        child: Row(children: [
+                          Container(width: 8, height: 8, decoration: BoxDecoration(color: _priorityColor(p), shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                          Text(_priorityLabel(p)),
+                        ]),
                       )).toList(),
                       onChanged: (val) => setState(() => _priority = val!),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Schedule', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _pickTime,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.access_time, size: 18, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Text(_startTime == null ? 'Set Time' : DateFormat('hh:mm a').format(_startTime!), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
+                    const Text('Schedule', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: _pickTime,
+                      style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12), alignment: Alignment.centerLeft),
+                      icon: const Icon(Icons.schedule, size: 18),
+                      label: Text(_startTime == null ? 'Set time' : DateFormat('hh:mm a').format(_startTime!)),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text('Schedule Task', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              style: primaryButtonStyle(),
+              child: const Text('Schedule task'),
             ),
           ),
         ],
       ),
     );
-  }
-
-  String _getPriorityLabel(TodoPriority p) {
-    switch (p) {
-      case TodoPriority.high: return '🔴 Urgent';
-      case TodoPriority.medium: return '🟠 Important';
-      case TodoPriority.low: return '🟢 Normal';
-    }
-  }
-
-  Color _getPriorityColor(TodoPriority p) {
-    switch (p) {
-      case TodoPriority.high: return Colors.red;
-      case TodoPriority.medium: return Colors.orange;
-      case TodoPriority.low: return Colors.green;
-    }
   }
 
   Future<void> _pickTime() async {
