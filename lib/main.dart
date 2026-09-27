@@ -158,12 +158,23 @@ class DairyDayApp extends StatelessWidget {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF7FAF8),
       cardColor: Colors.white,
-      dividerColor: Colors.grey.shade200,
+      dividerColor: const Color(0xFFE5E7EB),
       useMaterial3: true,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+      ),
+      dividerTheme: const DividerThemeData(color: Color(0xFFE5E7EB), thickness: 1, space: 1),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppConstants.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        highlightElevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.cardRadius)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -181,7 +192,11 @@ class DairyDayApp extends StatelessWidget {
       cardTheme: CardTheme(
         color: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          side: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
       ),
       listTileTheme: const ListTileThemeData(
         tileColor: Colors.white,
@@ -191,7 +206,8 @@ class DairyDayApp extends StatelessWidget {
       ),
       dialogTheme: DialogTheme(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: Colors.grey.shade100,
@@ -239,6 +255,17 @@ class DairyDayApp extends StatelessWidget {
         backgroundColor: darkCard,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: darkBorder)),
+      ),
+      dividerTheme: const DividerThemeData(color: darkBorder, thickness: 1, space: 1),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppConstants.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        highlightElevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.cardRadius)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -258,7 +285,11 @@ class DairyDayApp extends StatelessWidget {
       cardTheme: CardTheme(
         color: darkCard,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          side: const BorderSide(color: darkBorder),
+        ),
       ),
       listTileTheme: const ListTileThemeData(
         tileColor: darkCard,
@@ -270,7 +301,8 @@ class DairyDayApp extends StatelessWidget {
       ),
       dialogTheme: DialogTheme(
         backgroundColor: darkCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: darkInputFill,

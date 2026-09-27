@@ -171,18 +171,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))
-          ],
+          border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: _onTabSelected,
           type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          backgroundColor: Theme.of(context).cardColor,
           selectedItemColor: AppConstants.primaryColor,
-          unselectedItemColor: Colors.grey,
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
+          unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
           items: [
             BottomNavigationBarItem(
               icon: const Icon(Icons.home_outlined),
@@ -195,11 +196,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               label: lp.isTamil ? 'பால்' : 'Milk',
             ),
             BottomNavigationBarItem(
-              icon: Opacity(
-                opacity: 0.5,
-                child: Image.asset('assets/cow_icon.png', width: 24, height: 24),
-              ),
-              activeIcon: Image.asset('assets/cow_icon.png', width: 24, height: 24),
+              icon: const Icon(Icons.pets_outlined),
+              activeIcon: const Icon(Icons.pets),
               label: lp.isTamil ? 'பசுக்கள்' : 'Cows',
             ),
             BottomNavigationBarItem(

@@ -19,54 +19,53 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.6);
+    final Color subtitleColor = subtitle == null
+        ? muted
+        : subtitle!.contains('+')
+            ? AppConstants.successColor
+            : subtitle!.contains('-')
+                ? AppConstants.dangerColor
+                : muted;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: AppConstants.cardDecoration(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  fontWeight: FontWeight.w500,
+              Icon(icon, size: 16, color: muted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: muted, fontWeight: FontWeight.w500),
                 ),
               ),
-              Icon(icon, size: 18, color: color),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color == AppConstants.primaryColor ? Colors.black87 : color,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+              color: color == AppConstants.primaryColor ? theme.colorScheme.onSurface : color,
             ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subtitle!,
-              style: TextStyle(
-                fontSize: 10,
-                color: subtitle!.contains('+') ? Colors.green : (subtitle!.contains('-') ? Colors.red : Colors.grey),
-                fontWeight: FontWeight.w500,
-              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: subtitleColor, fontWeight: FontWeight.w500),
             ),
           ],
         ],

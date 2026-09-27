@@ -25,28 +25,36 @@ class ShortcutManagerScreen extends StatelessWidget {
           sp.updateShortcuts(items);
         },
         header: Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Text(
-            'Drag to reorder. Tap the switch to show/hide on Home.',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+            'Drag to reorder. Use the switch to show or hide a shortcut on the dashboard.',
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
           ),
         ),
         children: allKeys.map((key) {
           final isSelected = sp.selectedShortcuts.contains(key);
           final data = ShortcutProvider.allShortcuts[key]!;
+          final onSurface = Theme.of(context).colorScheme.onSurface;
           
           return Card(
             key: ValueKey(key),
             margin: const EdgeInsets.only(bottom: 8),
-            color: isSelected ? Colors.white : Colors.grey.shade50,
             child: ListTile(
-              leading: Icon(data['icon'] as IconData, color: data['color'] as Color),
-              title: Text(lp.translate(key)),
+              tileColor: Colors.transparent,
+              leading: Icon(
+                data['icon'] as IconData,
+                color: isSelected ? AppConstants.primaryColor : onSurface.withOpacity(0.45),
+              ),
+              title: Text(
+                lp.translate(key),
+                style: TextStyle(color: isSelected ? onSurface : onSurface.withOpacity(0.6)),
+              ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Switch(
                     value: isSelected,
+                    activeColor: AppConstants.primaryColor,
                     onChanged: (val) {
                       final List<String> newList = List.from(sp.selectedShortcuts);
                       if (val) {
@@ -57,7 +65,7 @@ class ShortcutManagerScreen extends StatelessWidget {
                       sp.updateShortcuts(newList);
                     },
                   ),
-                  const Icon(Icons.drag_handle, color: Colors.grey),
+                  Icon(Icons.drag_handle, color: onSurface.withOpacity(0.4)),
                 ],
               ),
             ),

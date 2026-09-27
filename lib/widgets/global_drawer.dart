@@ -23,117 +23,135 @@ class GlobalDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lp = Provider.of<LanguageProvider>(context);
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.6);
 
     return Drawer(
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [AppConstants.primaryColor, Colors.teal]),
+      backgroundColor: theme.cardColor,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppConstants.controlRadius),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.pets, color: AppConstants.primaryColor, size: 32),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('KRB Dairy Farms', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                        const SizedBox(height: 2),
+                        Text(
+                          lp.isTamil ? 'பண்ணை மேலாண்மை' : 'Farm management',
+                          style: TextStyle(fontSize: 12, color: muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            currentAccountPicture: CircleAvatar(
-              
-              child: Icon(Icons.pets, color: AppConstants.primaryColor, size: 40),
+            const Divider(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _drawerTile(context, Icons.dashboard_outlined, 'Dashboard', 0),
+                  _drawerTile(context, Icons.water_drop_outlined, 'Milk Records', 1),
+                  _drawerTile(context, Icons.pets_outlined, 'My Cows', 2),
+                  _drawerTile(context, Icons.currency_rupee, 'Financials', 3),
+                  _drawerTile(context, Icons.notifications_none, 'Alerts Manager', 4),
+                  _groupLabel(context, 'Tools'),
+                  _linkTile(context, Icons.cloud_outlined, 'Weather & Forecast', () => const WeatherScreen()),
+                  _linkTile(context, Icons.child_care_outlined, 'Maternity Alerts', () => CalvingAlertsScreen(onMenuPressed: onTabSelected)),
+                  _linkTile(context, Icons.calendar_month_outlined, 'Farm Calendar', () => const FarmCalendarScreen()),
+                  _linkTile(context, Icons.medical_services_outlined, 'Vet Contacts', () => const VetContactsScreen()),
+                  _linkTile(context, Icons.alarm, 'Reminders', () => const CustomAlertScreen()),
+                  _linkTile(context, Icons.account_balance_wallet_outlined, 'Budget Manager', () => const BudgetManagerScreen()),
+                  _linkTile(context, Icons.settings_outlined, 'Settings', () => const SettingsScreen()),
+                ],
+              ),
             ),
-            accountName: const Text('KRB Dairy Farms', style: TextStyle(fontWeight: FontWeight.bold)),
-            accountEmail: Text(
-              lp.isTamil ? 'பண்ணை மேலாண்மை' : 'Professional Farm Suite',
-              style: const TextStyle(fontSize: 12),
+            const Divider(),
+            ListTile(
+              leading: Icon(Icons.translate, color: muted, size: 22),
+              title: Text(lp.translate('tap_to_switch')),
+              onTap: () {
+                lp.toggleLanguage();
+                Navigator.pop(context);
+              },
             ),
-          ),
-          _drawerTile(context, Icons.dashboard, 'Dashboard', 0),
-          _drawerTile(context, Icons.water_drop, 'Milk Records', 1),
-          _drawerTile(context, Icons.pets, 'My Cows', 2),
-          _drawerTile(context, Icons.currency_rupee, 'Financials', 3),
-          _drawerTile(context, Icons.notifications_active, 'Alerts Manager', 4),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.cloud, color: Colors.cyan),
-            title: const Text('Weather & Forecast'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const WeatherScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.child_care, color: Colors.pinkAccent),
-            title: const Text('Maternity Alerts'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => CalvingAlertsScreen(onMenuPressed: onTabSelected)));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_month, color: Colors.deepPurple),
-            title: const Text('Farm Calendar'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmCalendarScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.medical_services, color: Colors.teal),
-            title: const Text('Vet Contacts'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const VetContactsScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.alarm, color: Colors.orange),
-            title: const Text('Reminders'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomAlertScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.account_balance_wallet, color: Colors.indigo),
-            title: const Text('Budget Manager'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const BudgetManagerScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings, color: Colors.blueGrey),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-            },
-          ),
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.language, color: AppConstants.primaryColor),
-            title: Text(lp.translate('tap_to_switch')),
-            onTap: () {
-              lp.toggleLanguage();
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _drawerTile(BuildContext context, IconData icon, String title, int index) {
-    bool isSelected = currentIndex == index;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppConstants.primaryColor : Colors.grey),
-      title: Text(
-        title,
+  Widget _groupLabel(BuildContext context, String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 6),
+      child: Text(
+        label.toUpperCase(),
         style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? AppConstants.primaryColor : Colors.black87,
+          fontSize: 11,
+          letterSpacing: 0.8,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
       ),
+    );
+  }
+
+  Widget _linkTile(BuildContext context, IconData icon, String title, Widget Function() builder) {
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, size: 22, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
       onTap: () {
-        onTabSelected(index);
         Navigator.pop(context);
+        Navigator.push(context, MaterialPageRoute(builder: (_) => builder()));
       },
+    );
+  }
+
+  Widget _drawerTile(BuildContext context, IconData icon, String title, int index) {
+    final bool isSelected = currentIndex == index;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: ListTile(
+        dense: true,
+        selected: isSelected,
+        selectedTileColor: AppConstants.primaryColor.withOpacity(0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
+        leading: Icon(icon, size: 22, color: isSelected ? AppConstants.primaryColor : onSurface.withOpacity(0.6)),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected ? AppConstants.primaryColor : onSurface,
+          ),
+        ),
+        onTap: () {
+          onTabSelected(index);
+          Navigator.pop(context);
+        },
+      ),
     );
   }
 }

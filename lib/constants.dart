@@ -10,10 +10,31 @@ class AppConstants {
   static const Color backgroundColor = Color(0xFFF7FAF8); // Off-White
   static const Color surfaceColor = Colors.white;
   static const Color errorColor = Color(0xFFBA1A1A);
+
+  // Semantic status colours
+  static const Color successColor = Color(0xFF15803D);
+  static const Color warningColor = Color(0xFFB45309);
+  static const Color dangerColor = Color(0xFFB91C1C);
+  static const Color infoColor = Color(0xFF1D4ED8);
   
   // Spacing
   static const double basePadding = 16.0;
   static const double containerPadding = 24.0;
+  static const double pagePadding = 16.0;
+  static const double sectionGap = 24.0;
+
+  // Shape
+  static const double cardRadius = 12.0;
+  static const double controlRadius = 10.0;
+
+  static BoxDecoration cardDecoration(BuildContext context) {
+    final theme = Theme.of(context);
+    return BoxDecoration(
+      color: theme.cardColor,
+      borderRadius: BorderRadius.circular(cardRadius),
+      border: Border.all(color: theme.dividerColor),
+    );
+  }
 
   static InputDecoration inputDecoration(String label, [BuildContext? context]) {
     final fillColor = context != null ? Theme.of(context).inputDecorationTheme.fillColor ?? Colors.white : Colors.white;

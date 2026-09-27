@@ -16,7 +16,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
   bool _showRetry = false;
 
   @override
@@ -24,16 +23,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
        vsync: this,
-       duration: const Duration(milliseconds: 1500),
+       duration: const Duration(milliseconds: 600),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.decelerate),
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _controller.forward();
 
@@ -84,64 +77,47 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Display the logo
-                Image.asset(
-                  'assets/logo.png',
-                  width: 200,
-                  height: 200,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback if logo.png is not yet placed in assets
-                    return Column(
-                      children: [
-                        const Icon(Icons.water_drop, size: 80, color: AppConstants.primaryColor),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'KRB Dairy Farms',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                            color: AppConstants.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'PURE • FRESH • QUALITY',
-                          style: TextStyle(
-                            fontSize: 10,
-                            letterSpacing: 4,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                const CircularProgressIndicator(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/logo.png',
+                width: 160,
+                height: 160,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Text(
+                    'KRB Dairy Farms',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: AppConstants.primaryColor,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(AppConstants.primaryColor),
                 ),
-                if (_showRetry) ...[
-                  const SizedBox(height: 32),
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(() => _showRetry = false);
-                      _navigateToMain();
-                    },
-                    icon: const Icon(Icons.refresh, color: AppConstants.primaryColor),
-                    label: const Text('Retry Authentication', style: TextStyle(color: AppConstants.primaryColor, fontWeight: FontWeight.bold)),
-                  ),
-                ],
+              ),
+              if (_showRetry) ...[
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() => _showRetry = false);
+                    _navigateToMain();
+                  },
+                  icon: const Icon(Icons.fingerprint, size: 18),
+                  label: const Text('Retry authentication'),
+                  style: OutlinedButton.styleFrom(foregroundColor: AppConstants.primaryColor),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),

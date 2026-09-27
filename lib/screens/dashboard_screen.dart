@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'dart:ui';
-import 'package:lottie/lottie.dart';
 import 'package:flutter/services.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/global_drawer.dart';
 import '../services/database_service.dart';
@@ -118,10 +117,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: GlobalDrawer(currentIndex: 0, onTabSelected: widget.onMenuPressed),
       appBar: AppBar(
-        title: const Text('Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
-        
+        title: const Text('Dashboard', style: TextStyle(fontWeight: FontWeight.w600)),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         leading: Builder(
           builder: (context) => IconButton(
             icon: Icon(Icons.menu, color: Theme.of(context).colorScheme.onSurface),
@@ -147,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           }
           if (!snapshot.hasData) {
-            return const PremiumLoading(message: 'Updating your farm dashboard...');
+            return const PremiumLoading(message: 'Loading dashboard…');
           }
 
           final data = snapshot.data!;
@@ -171,47 +169,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
               await _loadWeather();
             },
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppConstants.containerPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_weatherData != null) ...[
-                    _buildWeatherCard(),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Today's Stats
-                  Row(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppConstants.pagePadding),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 960),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: StatCard(label: lp.translate('today_milk'), value: '${_todayMilk.toStringAsFixed(1)}L', icon: Icons.water_drop, color: Colors.blue, subtitle: milkDiff == 0 ? lp.translate('same_as_yesterday') : '${milkDiff > 0 ? "+" : ""}${milkDiff.toStringAsFixed(1)}L ${lp.translate('from_yesterday')}')),
-                      const SizedBox(width: 16),
-                      Expanded(child: StatCard(label: lp.translate('net_balance'), value: Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '₹${_netProfit.toInt()}', icon: Icons.account_balance_wallet, color: _netProfit >= 0 ? Colors.green : Colors.red, subtitle: lp.translate('overall_profit'))),
+                      // Today's Stats
+                      Row(
+                        children: [
+                          Expanded(child: StatCard(label: lp.translate('today_milk'), value: '${_todayMilk.toStringAsFixed(1)} L', icon: Icons.water_drop_outlined, subtitle: milkDiff == 0 ? lp.translate('same_as_yesterday') : '${milkDiff > 0 ? "+" : ""}${milkDiff.toStringAsFixed(1)} L ${lp.translate('from_yesterday')}')),
+                          const SizedBox(width: 12),
+                          Expanded(child: StatCard(label: lp.translate('net_balance'), value: Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '₹${_netProfit.toInt()}', icon: Icons.account_balance_wallet_outlined, color: _netProfit >= 0 ? AppConstants.successColor : AppConstants.dangerColor, subtitle: lp.translate('overall_profit'))),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (_weatherData != null) ...[
+                        _buildWeatherCard(),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Goal Tracker Ring
+                      _buildGoalTracker(lp),
+                      const SizedBox(height: AppConstants.sectionGap),
+                      
+                      // Quick Actions
+                      _buildQuickActionsHeader(lp),
+                      _buildShortcutGrid(lp, sp),
+                      const SizedBox(height: AppConstants.sectionGap),
+
+                      // Maternity Alerts
+                      if (_topAlerts.isNotEmpty) ...[
+                        _buildAlertSection(lp),
+                        const SizedBox(height: AppConstants.sectionGap),
+                      ],
+
+                      // Analysis Charts
+                      _buildLineChartCard(lp),
+                      const SizedBox(height: 12),
+                      _buildFinancialComparisonCard(lp),
+                      const SizedBox(height: 24),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Goal Tracker Ring
-                  _buildGoalTracker(lp),
-                  const SizedBox(height: 24),
-                  
-                  // Quick Actions
-                  _buildQuickActionsHeader(lp),
-                  const SizedBox(height: 12),
-                  _buildShortcutGrid(lp, sp),
-                  const SizedBox(height: 24),
-
-                  // Maternity Alerts
-                  if (_topAlerts.isNotEmpty) ...[
-                    _buildAlertSection(lp),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Analysis Charts
-                  _buildLineChartCard(lp),
-                  const SizedBox(height: 16),
-                  _buildFinancialComparisonCard(lp),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
           );
@@ -222,35 +225,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildGoalTracker(dynamic lp) {
     final goal = _milkGoal;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
+    final hasGoal = goal != null && goal.targetLiters > 0;
+    return AppCard(
+      onTap: _showGoalDialog,
       child: Row(
         children: [
           SizedBox(
-            width: 80, height: 80,
+            width: 56, height: 56,
             child: Stack(alignment: Alignment.center, children: [
-              SizedBox(width: 80, height: 80, child: CircularProgressIndicator(
-                value: goal != null && goal.targetLiters > 0 ? (_todayMilk / goal.targetLiters * 30).clamp(0.0, 1.0) : 0,
-                strokeWidth: 8, backgroundColor: Theme.of(context).dividerColor,
-                valueColor: AlwaysStoppedAnimation(goal != null ? AppConstants.primaryColor : Colors.grey.shade300),
+              SizedBox(width: 56, height: 56, child: CircularProgressIndicator(
+                value: hasGoal ? (_todayMilk / goal.targetLiters * 30).clamp(0.0, 1.0) : 0,
+                strokeWidth: 5, backgroundColor: Theme.of(context).dividerColor,
+                valueColor: const AlwaysStoppedAnimation(AppConstants.primaryColor),
               )),
-              Text(goal != null && goal.targetLiters > 0 ? '${((_todayMilk / goal.targetLiters * 30) * 100).clamp(0, 999).toInt()}%' : '—',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: goal != null ? AppConstants.primaryColor : Colors.grey)),
+              Text(hasGoal ? '${((_todayMilk / goal.targetLiters * 30) * 100).clamp(0, 999).toInt()}%' : '—',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: hasGoal ? Theme.of(context).colorScheme.onSurface : context.mutedText)),
             ]),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('🎯 Monthly Milk Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 6),
-            if (goal != null) Text('${_todayMilk.toStringAsFixed(1)}L today • Target: ${goal.targetLiters.toStringAsFixed(0)}L/month', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))
-            else Text('Tap to set a production goal', style: TextStyle(fontSize: 12, color: Theme.of(context).cardColor)),
+            const Text('Monthly milk goal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const SizedBox(height: 4),
+            if (goal != null) Text('${_todayMilk.toStringAsFixed(1)} L today · Target ${goal.targetLiters.toStringAsFixed(0)} L / month', style: TextStyle(fontSize: 13, color: context.mutedText))
+            else Text('Set a production target for this month', style: TextStyle(fontSize: 13, color: context.mutedText)),
           ])),
-          IconButton(icon: Icon(goal != null ? Icons.edit : Icons.add_circle_outline, color: AppConstants.primaryColor), onPressed: _showGoalDialog),
+          IconButton(
+            tooltip: goal != null ? 'Edit goal' : 'Set goal',
+            icon: Icon(goal != null ? Icons.edit_outlined : Icons.add, color: context.mutedText, size: 20),
+            onPressed: _showGoalDialog,
+          ),
         ],
       ),
     );
@@ -260,10 +263,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final ctrl = TextEditingController(text: _milkGoal?.targetLiters.toStringAsFixed(0) ?? '');
     final now = DateTime.now();
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text('Set Goal — ${DateFormat('MMMM').format(now)}'),
-      content: TextField(controller: ctrl, keyboardType: TextInputType.number, autofocus: true, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        decoration: InputDecoration(suffixText: 'Liters', hintText: 'e.g. 500', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+      title: Text('Milk goal — ${DateFormat('MMMM').format(now)}'),
+      content: TextField(controller: ctrl, keyboardType: TextInputType.number, autofocus: true, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        decoration: AppConstants.inputDecoration('Monthly target', ctx).copyWith(suffixText: 'litres', hintText: 'e.g. 500')),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
         FilledButton(onPressed: () async {
@@ -278,38 +280,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildWeatherCard() {
     final w = _weatherData!;
     final isHeat = w.isHeatStress;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isHeat ? [Colors.orange.shade600, Colors.red.shade400] : [AppConstants.primaryColor, Colors.teal.shade700],
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
+    final heatColor = w.temperature >= 35 ? AppConstants.dangerColor : AppConstants.warningColor;
+    return AppCard(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WeatherScreen())),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(w.locationName, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  Text('${w.temperature.toStringAsFixed(1)}°C', style: TextStyle(color: Theme.of(context).cardColor, fontSize: 32, fontWeight: FontWeight.bold)),
-                  Text(w.condition, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-                ],
-              ),
-              Text(w.icon, style: const TextStyle(fontSize: 48)),
-            ],
-          ),
-          if (isHeat) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-              child: Text('⚠️ Heat Stress: ${w.heatStressLevel}', style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 12)),
+          IconTile(weatherIcon(w.weatherCode), size: 44),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(w.locationName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.mutedText)),
+                const SizedBox(height: 2),
+                Text('${w.temperature.toStringAsFixed(1)}°C · ${w.condition}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
             ),
-          ],
+          ),
+          if (isHeat)
+            StatusPill(label: 'Heat stress: ${w.heatStressLevel}', color: heatColor, icon: Icons.warning_amber_rounded),
         ],
       ),
     );
@@ -318,35 +307,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildFinancialComparisonCard(LanguageProvider lp) {
     double currentIn = _yearlyIn.isNotEmpty ? _yearlyIn.last : 0;
     double currentOut = _yearlyOut.isNotEmpty ? _yearlyOut.last : 0;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor)),
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(lp.isTamil ? 'நிதி நிலை (12 மாதங்கள்)' : 'Financials (Last 12 Months)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+              Expanded(child: Text(lp.isTamil ? 'நிதி நிலை (12 மாதங்கள்)' : 'Income vs expenses · 12 months', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
               IconButton(
-                icon: Icon(_showBarChart ? Icons.show_chart : Icons.bar_chart, size: 20, color: AppConstants.primaryColor),
+                tooltip: _showBarChart ? 'Show line chart' : 'Show bar chart',
+                icon: Icon(_showBarChart ? Icons.show_chart : Icons.bar_chart, size: 20, color: context.mutedText),
                 onPressed: () => setState(() => _showBarChart = !_showBarChart),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 180,
-            child: _showBarChart ? _buildBarChartView() : _buildLineChartView(),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: SizedBox(
+              height: 180,
+              child: _showBarChart ? _buildBarChartView() : _buildLineChartView(),
+            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _legendItem(lp.translate('income'), Colors.teal),
-              _legendItem(lp.translate('expense'), Colors.red),
-              Text('NET: ${Provider.of<PrivacyProvider>(context).hideBalances ? "₹***" : "₹${(currentIn - currentOut).toInt()}"}', style: TextStyle(fontWeight: FontWeight.w900, color: (currentIn >= currentOut) ? Colors.teal : Colors.red)),
-            ],
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              children: [
+                _legendItem(lp.translate('income'), AppConstants.primaryColor),
+                const SizedBox(width: 16),
+                _legendItem(lp.translate('expense'), AppConstants.dangerColor),
+                const Spacer(),
+                Text('This month  ', style: TextStyle(fontSize: 12, color: context.mutedText)),
+                Text(Provider.of<PrivacyProvider>(context).hideBalances ? '₹***' : '₹${(currentIn - currentOut).toInt()}', style: TextStyle(fontWeight: FontWeight.w700, color: (currentIn >= currentOut) ? AppConstants.successColor : AppConstants.dangerColor)),
+              ],
+            ),
           ),
         ],
       ),
@@ -356,9 +352,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _legendItem(String label, Color color) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: context.mutedText)),
       ],
     );
   }
@@ -370,7 +366,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         maxY: _getMaxVal() * 1.2,
         titlesData: FlTitlesData(
           show: true,
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, meta) => Text(_monthLabels[val.toInt()], style: const TextStyle(fontSize: 8, color: Colors.grey)))),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, meta) => Padding(padding: const EdgeInsets.only(top: 4), child: Text(_monthLabels[val.toInt()], style: TextStyle(fontSize: 9, color: context.mutedText))))),
           leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -379,9 +375,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderData: FlBorderData(show: false),
         barGroups: List.generate(12, (i) => BarChartGroupData(
           x: i,
+          barsSpace: 2,
           barRods: [
-            BarChartRodData(toY: _yearlyIn[i], color: Colors.teal, width: 6),
-            BarChartRodData(toY: _yearlyOut[i], color: Colors.red, width: 6),
+            BarChartRodData(toY: _yearlyIn[i], color: AppConstants.primaryColor, width: 5, borderRadius: BorderRadius.circular(1)),
+            BarChartRodData(toY: _yearlyOut[i], color: AppConstants.dangerColor.withOpacity(0.75), width: 5, borderRadius: BorderRadius.circular(1)),
           ],
         )),
       ),
@@ -394,7 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         gridData: FlGridData(show: false),
         titlesData: FlTitlesData(
           show: true,
-          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, meta) => Text(_monthLabels[val.toInt()], style: const TextStyle(fontSize: 8, color: Colors.grey)))),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, meta) => Padding(padding: const EdgeInsets.only(top: 4), child: Text(_monthLabels[val.toInt()], style: TextStyle(fontSize: 9, color: context.mutedText))))),
           leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -403,11 +400,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         lineBarsData: [
           LineChartBarData(
             spots: List.generate(12, (i) => FlSpot(i.toDouble(), _yearlyIn[i])),
-            color: Colors.teal, isCurved: true, barWidth: 3, dotData: FlDotData(show: false),
+            color: AppConstants.primaryColor, isCurved: false, barWidth: 2, dotData: FlDotData(show: false),
           ),
           LineChartBarData(
             spots: List.generate(12, (i) => FlSpot(i.toDouble(), _yearlyOut[i])),
-            color: Colors.red, isCurved: true, barWidth: 3, dotData: FlDotData(show: false),
+            color: AppConstants.dangerColor, isCurved: false, barWidth: 2, dotData: FlDotData(show: false),
           ),
         ],
       ),
@@ -424,18 +421,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [const Icon(Icons.stars, color: Colors.orange, size: 18), const SizedBox(width: 8), Text(lp.isTamil ? 'பேறுகால அறிவிப்புகள்' : 'Maternity Status', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54, fontSize: 13))]),
-        const SizedBox(height: 12), _buildAlertStrip(lp),
+        SectionHeader(lp.isTamil ? 'பேறுகால அறிவிப்புகள்' : 'Upcoming calvings'),
+        _buildAlertStrip(lp),
       ],
     );
   }
 
   Widget _buildAlertStrip(LanguageProvider lp) {
-    return SizedBox(height: 60, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: _topAlerts.length, itemBuilder: (context, index) {
+    return SizedBox(height: 64, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: _topAlerts.length, separatorBuilder: (_, __) => const SizedBox(width: 8), itemBuilder: (context, index) {
       final alert = _topAlerts[index];
       final daysLeft = alert['date'].difference(DateTime.now()).inDays;
       final bool isUrgent = daysLeft <= 15;
-      return Container(margin: const EdgeInsets.only(right: 12), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), decoration: BoxDecoration(color: isUrgent ? Colors.red.shade50 : Colors.teal.shade50, borderRadius: BorderRadius.circular(16), border: Border.all(color: isUrgent ? Colors.red.shade100 : Colors.teal.shade100)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text('${alert['tag']} predicted delivery:', style: TextStyle(fontSize: 10, color: isUrgent ? Colors.red.shade700 : Colors.teal.shade800)), Text('${DateFormat('MMM d').format(alert['date'])} ($daysLeft days left)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isUrgent ? Colors.red.shade900 : Colors.teal.shade900))]));
+      final accent = isUrgent ? AppConstants.dangerColor : Theme.of(context).colorScheme.onSurface;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isUrgent ? AppConstants.dangerColor.withOpacity(0.06) : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+          border: Border.all(color: isUrgent ? AppConstants.dangerColor.withOpacity(0.3) : Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('${alert['tag']} · due ${DateFormat('MMM d').format(alert['date'])}', style: TextStyle(fontSize: 12, color: context.mutedText)),
+            const SizedBox(height: 2),
+            Text('$daysLeft days left', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: accent)),
+          ],
+        ),
+      );
     }));
   }
 
@@ -449,16 +463,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       maxY = (maxY + 5).ceilToDouble();
     }
 
-    return Container(padding: const EdgeInsets.fromLTRB(16, 20, 16, 12), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(24), border: Border.all(color: Theme.of(context).dividerColor)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(lp.isTamil ? 'வாராந்திர விளைச்சல்' : 'Weekly Yield Trend (L)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)), Icon(Icons.trending_up, color: Colors.green.shade400, size: 20)]),
-      const SizedBox(height: 32),
+    return AppCard(padding: const EdgeInsets.fromLTRB(16, 16, 16, 12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(lp.isTamil ? 'வாராந்திர விளைச்சல்' : 'Milk yield · last 7 days (L)', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+      const SizedBox(height: 20),
       SizedBox(height: 140, child: LineChart(LineChartData(
         minY: minY,
         maxY: maxY,
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             tooltipBgColor: AppConstants.primaryColor,
-            getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(s.y.toStringAsFixed(1), TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 12))).toList(),
+            getTooltipItems: (spots) => spots.map((s) => LineTooltipItem('${s.y.toStringAsFixed(1)} L', const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12))).toList(),
           ),
         ),
         gridData: FlGridData(show: false), 
@@ -474,7 +488,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final date = DateTime.parse(_chartDates[value.toInt()]); 
               return Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Text(DateFormat('E').format(date), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                child: Text(DateFormat('E').format(date), style: TextStyle(color: context.mutedText, fontSize: 10)),
               ); 
             }
           )), 
@@ -482,18 +496,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             showTitles: true, 
             reservedSize: 30, 
             interval: ((maxY - minY) / 3).clamp(1, double.infinity),
-            getTitlesWidget: (value, meta) => Text('${value.toInt()}', style: const TextStyle(color: Colors.grey, fontSize: 10))
+            getTitlesWidget: (value, meta) => Text('${value.toInt()}', style: TextStyle(color: context.mutedText, fontSize: 10))
           ))
         ), 
         borderData: FlBorderData(show: false), 
         lineBarsData: [
           LineChartBarData(
             spots: _weeklySpots, 
-            isCurved: true, 
-            gradient: const LinearGradient(colors: [AppConstants.primaryColor, Colors.teal]), 
-            barWidth: 4, 
+            isCurved: false, 
+            color: AppConstants.primaryColor, 
+            barWidth: 2, 
             dotData: FlDotData(show: true), 
-            belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppConstants.primaryColor.withOpacity(0.2), AppConstants.primaryColor.withOpacity(0.0)]))
+            belowBarData: BarAreaData(show: true, color: AppConstants.primaryColor.withOpacity(0.08))
           )
         ]
       ))),
@@ -501,12 +515,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickActionsHeader(LanguageProvider lp) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(lp.translate('quick_actions'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), IconButton(icon: const Icon(Icons.settings_outlined, size: 20), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShortcutManagerScreen()))),]);
+    return SectionHeader(
+      lp.translate('quick_actions'),
+      trailing: TextButton.icon(
+        icon: const Icon(Icons.tune, size: 18),
+        label: const Text('Customize'),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShortcutManagerScreen())),
+      ),
+    );
   }
 
   Widget _buildShortcutGrid(LanguageProvider lp, ShortcutProvider sp) {
-    if (sp.selectedShortcuts.isEmpty) return const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('Add shortcuts in settings', style: TextStyle(color: Colors.grey, fontSize: 12))));
-    return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.6), itemCount: sp.selectedShortcuts.length, itemBuilder: (context, index) { 
+    if (sp.selectedShortcuts.isEmpty) return Padding(padding: const EdgeInsets.symmetric(vertical: 20), child: Center(child: Text('No shortcuts selected. Use Customize to add some.', style: TextStyle(color: context.mutedText, fontSize: 13))));
+    final columns = MediaQuery.of(context).size.width >= 700 ? 6 : 3;
+    return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), padding: EdgeInsets.zero, gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.25), itemCount: sp.selectedShortcuts.length, itemBuilder: (context, index) { 
       final key = sp.selectedShortcuts[index]; 
       final data = Map<String, dynamic>.from(ShortcutProvider.allShortcuts[key]!); 
       String label = lp.translate(key);
@@ -518,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label = isMorning ? (lp.isTamil ? 'காலை பால் பதிவு' : 'Morning Milk') : (lp.isTamil ? 'மாலை பால் பதிவு' : 'Evening Milk');
       }
       
-      return _buildQuickAction(label, data['icon'] as IconData, data['color'] as Color, () => _navigate(key)); 
+      return _buildQuickAction(label, data['icon'] as IconData, () => _navigate(key)); 
     });
   }
 
@@ -551,29 +573,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => target));
   }
 
-  Widget _buildQuickAction(String label, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _buildQuickAction(String label, IconData icon, VoidCallback onTap) {
+    return AppCard(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: 6),
-                Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center),
-              ],
-            ),
-          ),
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: AppConstants.primaryColor, size: 22),
+          const SizedBox(height: 6),
+          Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500, fontSize: 12, height: 1.2)),
+        ],
       ),
     );
   }
