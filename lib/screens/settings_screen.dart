@@ -81,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Weather location set to ${location.displayName}'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppConstants.successColor,
         ),
       );
     }

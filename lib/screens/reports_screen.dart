@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../services/report_service.dart';
+import '../widgets/app_ui.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -31,13 +32,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Report generated successfully!'), backgroundColor: Colors.green),
+          SnackBar(content: const Text('Report generated successfully!'), backgroundColor: AppConstants.successColor),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating report: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error generating report: $e'), backgroundColor: AppConstants.dangerColor),
         );
       }
     } finally {
@@ -57,21 +58,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Select Report Type',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            const SectionHeader('Report type'),
             Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppConstants.cardRadius),
                 border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Column(
                 children: _reportTypes.map((type) => RadioListTile<String>(
                   title: Text(type, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(_getReportSubtitle(type), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  subtitle: Text(_getReportSubtitle(type), style: TextStyle(fontSize: 12, color: context.mutedText)),
                   value: type,
                   groupValue: _selectedReportType,
                   activeColor: AppConstants.primaryColor,
@@ -81,18 +78,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             const SizedBox(height: 24),
             
-            const Text(
-              'Select Format',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            const SectionHeader('Format'),
             Row(
               children: [
                 Expanded(
                   child: _buildFormatCard(
                     title: 'PDF Document',
-                    icon: Icons.picture_as_pdf,
-                    color: Colors.red,
+                    icon: Icons.picture_as_pdf_outlined,
                     isSelected: _isPdf,
                     onTap: () => setState(() => _isPdf = true),
                   ),
@@ -101,8 +93,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Expanded(
                   child: _buildFormatCard(
                     title: 'Excel Spreadsheet',
-                    icon: Icons.table_chart,
-                    color: Colors.green,
+                    icon: Icons.table_chart_outlined,
                     isSelected: !_isPdf,
                     onTap: () => setState(() => _isPdf = false),
                   ),
@@ -113,19 +104,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const SizedBox(height: 48),
             ElevatedButton(
               onPressed: _isGenerating ? null : _generateReport,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              style: primaryButtonStyle(),
               child: _isGenerating 
-                ? SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Theme.of(context).cardColor, strokeWidth: 3))
+                ? const ButtonSpinner()
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.share, color: Colors.white),
+                    children: const [
+                      Icon(Icons.ios_share, size: 20),
                       SizedBox(width: 8),
-                      Text('Generate & Share', style: TextStyle(fontSize: 18, color: Theme.of(context).cardColor, fontWeight: FontWeight.bold)),
+                      Text('Generate & share'),
                     ],
                   ),
             ),
@@ -147,35 +134,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildFormatCard({
     required String title,
     required IconData icon,
-    required Color color,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    const color = AppConstants.primaryColor;
+    return AppCard(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 40, color: isSelected ? color : Colors.grey),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? color : Colors.grey.shade700,
-              ),
+      color: isSelected ? color.withOpacity(0.06) : null,
+      borderColor: isSelected ? color : null,
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      child: Column(
+        children: [
+          Icon(icon, size: 28, color: isSelected ? color : context.mutedText),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              color: isSelected ? color : Theme.of(context).colorScheme.onSurface,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

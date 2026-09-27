@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../services/database_service.dart';
 import '../models/vet_contact.dart';
+import '../widgets/app_ui.dart';
 
 class VetContactsScreen extends StatefulWidget {
   const VetContactsScreen({super.key});
@@ -23,7 +24,7 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
         child: Column(
@@ -41,7 +42,7 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
               decoration: InputDecoration(
                 labelText: 'Vet Name *',
                 prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               ),
@@ -53,7 +54,7 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
               decoration: InputDecoration(
                 labelText: 'Phone Number *',
                 prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               ),
@@ -64,7 +65,7 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
               decoration: InputDecoration(
                 labelText: 'Specialty (optional)',
                 prefixIcon: const Icon(Icons.medical_services),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               ),
@@ -76,7 +77,7 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
               decoration: InputDecoration(
                 labelText: 'Notes (optional)',
                 prefixIcon: const Icon(Icons.note),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               ),
@@ -106,13 +107,8 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(existing == null ? 'Add Contact' : 'Update Contact', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: primaryButtonStyle(),
+              child: Text(existing == null ? 'Add contact' : 'Update contact'),
             ),
           ],
         ),
@@ -138,17 +134,10 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
           }
           final contacts = snapshot.data ?? [];
           if (contacts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.medical_services_outlined, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  Text('No vet contacts yet', style: TextStyle(fontSize: 16, color: Theme.of(context).cardColor)),
-                  const SizedBox(height: 8),
-                  Text('Tap + to add your veterinarian', style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
-                ],
-              ),
+            return const EmptyState(
+              icon: Icons.contact_phone_outlined,
+              title: 'No vet contacts yet',
+              message: 'Tap + to add your veterinarian',
             );
           }
           return ListView.builder(
@@ -156,27 +145,21 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
             itemCount: contacts.length,
             itemBuilder: (context, index) {
               final vet = contacts[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-                ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AppCard(
+                padding: EdgeInsets.zero,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.teal.shade50,
-                    child: const Icon(Icons.medical_services, color: Colors.teal),
-                  ),
-                  title: Text(vet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  leading: const IconTile(Icons.medical_services_outlined),
+                  title: Text(vet.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.phone, size: 14, color: Colors.grey),
+                          Icon(Icons.phone_outlined, size: 14, color: context.mutedText),
                           const SizedBox(width: 4),
                           Text(vet.phone, style: const TextStyle(fontSize: 13)),
                         ],
@@ -192,7 +175,8 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.call, color: Colors.green, size: 22),
+                        tooltip: 'Call',
+                        icon: const Icon(Icons.call_outlined, color: AppConstants.primaryColor, size: 22),
                         onPressed: () => launchUrl(Uri.parse('tel:${vet.phone}')),
                       ),
                       PopupMenuButton<String>(
@@ -202,11 +186,12 @@ class _VetContactsScreenState extends State<VetContactsScreen> {
                         },
                         itemBuilder: (_) => [
                           const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                          const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                          const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: AppConstants.dangerColor))),
                         ],
                       ),
                     ],
                   ),
+                ),
                 ),
               );
             },

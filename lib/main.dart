@@ -26,7 +26,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     if (notification != null) {
       await NotificationService.showImmediateNotification(
         id: message.messageId.hashCode,
-        title: notification.title ?? '🔔 Farm Alert',
+        title: notification.title ?? 'Farm Alert',
         body: notification.body ?? '',
       );
     }

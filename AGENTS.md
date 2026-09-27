@@ -134,6 +134,14 @@ is inferred in `docs/DATABASE.md`.
   Use `Theme.of(context)` colours instead of hardcoded `Colors.white` / `Colors.black87`, because
   dark mode is supported and the `fix_*.dart` scripts exist to clean up past hardcoding.
 - Form fields use `AppConstants.inputDecoration(label, context)`.
+- Visual style is restrained and flat. Build with the primitives in `lib/widgets/app_ui.dart`
+  (`AppCard`, `SectionHeader`, `StatusPill`, `IconTile`, `EmptyState`, `primaryButtonStyle`,
+  `ButtonSpinner`, `weatherIcon`, `context.mutedText`) and the tokens in `constants.dart`
+  (`successColor`/`warningColor`/`dangerColor`/`infoColor`, `cardRadius` 12, `controlRadius` 10,
+  `pagePadding`). Do not add gradients, glass blur, drop shadows, emoji in labels or notification
+  titles, or rainbow per-item colours; colour carries status meaning only. Never use
+  `Theme.of(context).cardColor` as a text colour (it is the surface colour, so the text disappears).
+  The login screen is intentionally styled separately.
 - Remote photos use `CowImage` (`lib/widgets/cow_image.dart`), which adds a disk cache and decodes at display
   size. Don't use `Image.network`/`NetworkImage` for storage images; for `DecorationImage` use
   `ResizeImage(CachedNetworkImageProvider(url), width: ...)`. Pick images with `maxWidth`/`maxHeight`

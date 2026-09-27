@@ -3,6 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../services/weather_service.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -45,26 +47,33 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
     }
   }
 
+  static const Color _maxColor = AppConstants.dangerColor;
+  static const Color _minColor = AppConstants.infoColor;
+  static const List<Color> _modelColors = [AppConstants.primaryColor, Color(0xFFB45309), Color(0xFF1D4ED8), Color(0xFF64748B)];
+
+  Widget _axisLabel(String text) => Text(text, style: TextStyle(fontSize: 9, color: context.mutedText));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Weather & Heat Stress'),
-        backgroundColor: AppConstants.primaryColor,
-        foregroundColor: Colors.white,
+        title: const Text('Weather & heat stress'),
+        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          labelColor: AppConstants.primaryColor,
+          unselectedLabelColor: context.mutedText,
+          indicatorColor: AppConstants.primaryColor,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
           tabs: const [
             Tab(text: 'Today'),
-            Tab(text: '16-Day'),
+            Tab(text: '16 days'),
             Tab(text: 'Compare'),
           ],
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const PremiumLoading(message: 'Loading weather…')
           : TabBarView(
               controller: _tabController,
               children: [_buildTodayTab(), _buildForecastTab(), _buildCompareTab()],
@@ -74,109 +83,121 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
 
   // ── TODAY TAB ──
   Widget _buildTodayTab() {
-    if (_current == null) return const Center(child: Text('Weather data unavailable'));
+    if (_current == null) return const EmptyState(icon: Icons.cloud_off_outlined, title: 'Weather data unavailable', message: 'Check your connection or location in Settings.');
     final w = _current!;
+    final heatColor = w.temperature >= 35 ? AppConstants.dangerColor : AppConstants.warningColor;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(children: [
+      padding: const EdgeInsets.all(AppConstants.pagePadding),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Current conditions card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: w.isHeatStress
-                  ? [Colors.orange.shade600, Colors.red.shade400]
-                  : [Colors.blue.shade500, Colors.cyan.shade300],
-            ),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(children: [
-            Text(w.icon, style: const TextStyle(fontSize: 56)),
-            const SizedBox(height: 8),
-            Text('${w.temperature.toStringAsFixed(1)}°C', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text(w.condition, style: const TextStyle(fontSize: 16, color: Colors.white70)),
-            const SizedBox(height: 8),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.location_on, size: 14, color: Colors.white54),
+        AppCard(
+          padding: const EdgeInsets.all(20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(Icons.location_on_outlined, size: 16, color: context.mutedText),
               const SizedBox(width: 4),
-              Text(_locationName, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+              Expanded(child: Text(_locationName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: context.mutedText))),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              IconTile(weatherIcon(w.weatherCode), size: 52),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${w.temperature.toStringAsFixed(1)}°C', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, height: 1.1)),
+                  Text(w.condition, style: TextStyle(fontSize: 15, color: context.mutedText)),
+                ]),
+              ),
             ]),
             const SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              _miniStat('💨 Wind', '${w.windSpeed.toStringAsFixed(0)} km/h'),
-              _miniStat('💧 Humidity', '${w.humidity}%'),
-              _miniStat('🔥 Heat', w.heatStressLevel),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            Row(children: [
+              _miniStat(Icons.air, 'Wind', '${w.windSpeed.toStringAsFixed(0)} km/h'),
+              _miniStat(Icons.water_drop_outlined, 'Humidity', '${w.humidity}%'),
+              _miniStat(Icons.thermostat_outlined, 'Heat stress', w.heatStressLevel),
             ]),
-            if (w.isHeatStress) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                child: Text('⚠️ Heat Stress ${w.heatStressLevel}! Ensure shade, water & ventilation for cattle.', style: TextStyle(color: Theme.of(context).cardColor, fontSize: 12, fontWeight: FontWeight.w600)),
-              ),
-            ],
           ]),
         ),
-        const SizedBox(height: 20),
+        if (w.isHeatStress) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: heatColor.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+              border: Border.all(color: heatColor.withOpacity(0.3)),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.warning_amber_rounded, color: heatColor, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Heat stress ${w.heatStressLevel.toLowerCase()}. Ensure shade, water and ventilation for cattle.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, height: 1.4))),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 12),
         // Hourly chart
         if (w.hourlyTemperatures.isNotEmpty) _buildHourlyChart(w),
       ]),
     );
   }
 
-  Widget _miniStat(String label, String value) {
-    return Column(children: [
-      Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
-      const SizedBox(height: 4),
-      Text(value, style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 14)),
-    ]);
+  Widget _miniStat(IconData icon, String label, String value) {
+    return Expanded(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, size: 14, color: context.mutedText),
+          const SizedBox(width: 4),
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.mutedText, fontSize: 12))),
+        ]),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      ]),
+    );
   }
 
   Widget _buildHourlyChart(WeatherData w) {
     final currentHour = DateTime.now().hour;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
+    return AppCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('24-Hour Temperature', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text('Min ${w.hourlyTemperatures.reduce((a, b) => a < b ? a : b).toStringAsFixed(0)}° / Max ${w.hourlyTemperatures.reduce((a, b) => a > b ? a : b).toStringAsFixed(0)}°', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+          const Text('Next 24 hours', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          Text('Min ${w.hourlyTemperatures.reduce((a, b) => a < b ? a : b).toStringAsFixed(0)}° · Max ${w.hourlyTemperatures.reduce((a, b) => a > b ? a : b).toStringAsFixed(0)}°', style: TextStyle(fontSize: 12, color: context.mutedText)),
         ]),
         const SizedBox(height: 16),
         SizedBox(
           height: 160,
           child: LineChart(LineChartData(
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 5, getDrawingHorizontalLine: (_) => FlLine(color: Theme.of(context).cardColor, strokeWidth: 1)),
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 5, getDrawingHorizontalLine: (_) => FlLine(color: Theme.of(context).dividerColor, strokeWidth: 1)),
             titlesData: FlTitlesData(
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 5, getTitlesWidget: (v, _) => Text('${v.toInt()}°', style: TextStyle(fontSize: 10, color: Theme.of(context).cardColor)))),
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 5, getTitlesWidget: (v, _) => _axisLabel('${v.toInt()}°'))),
               bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 4, getTitlesWidget: (v, _) {
                 final h = v.toInt();
-                if (h >= 0 && h <= 23 && h % 4 == 0) return Text('${h.toString().padLeft(2, '0')}h', style: TextStyle(fontSize: 9, color: Theme.of(context).cardColor));
+                if (h >= 0 && h <= 23 && h % 4 == 0) return _axisLabel('${h.toString().padLeft(2, '0')}h');
                 return const Text('');
               })),
             ),
             borderData: FlBorderData(show: false),
             extraLinesData: ExtraLinesData(verticalLines: [
-              VerticalLine(x: currentHour.toDouble(), color: AppConstants.primaryColor.withOpacity(0.5), strokeWidth: 2, dashArray: [4, 4],
-                label: VerticalLineLabel(show: true, labelResolver: (_) => 'Now', style: TextStyle(fontSize: 9, color: AppConstants.primaryColor, fontWeight: FontWeight.bold))),
+              VerticalLine(x: currentHour.toDouble(), color: AppConstants.primaryColor.withOpacity(0.5), strokeWidth: 1.5, dashArray: [4, 4],
+                label: VerticalLineLabel(show: true, labelResolver: (_) => 'Now', style: const TextStyle(fontSize: 9, color: AppConstants.primaryColor, fontWeight: FontWeight.w600))),
             ], horizontalLines: [
               if (w.hourlyTemperatures.any((t) => t >= 30))
-                HorizontalLine(y: 30, color: Colors.red.withOpacity(0.3), strokeWidth: 1, dashArray: [6, 4],
-                  label: HorizontalLineLabel(show: true, labelResolver: (_) => '30°C Heat', style: const TextStyle(fontSize: 8, color: Colors.red), alignment: Alignment.topRight)),
+                HorizontalLine(y: 30, color: AppConstants.dangerColor.withOpacity(0.35), strokeWidth: 1, dashArray: [6, 4],
+                  label: HorizontalLineLabel(show: true, labelResolver: (_) => '30°C heat', style: const TextStyle(fontSize: 9, color: AppConstants.dangerColor), alignment: Alignment.topRight)),
             ]),
             lineBarsData: [
               LineChartBarData(
                 spots: List.generate(currentHour + 1, (i) => FlSpot(i.toDouble(), w.hourlyTemperatures[i])),
-                isCurved: true, color: AppConstants.primaryColor, barWidth: 3, dotData: FlDotData(show: false),
-                belowBarData: BarAreaData(show: true, color: AppConstants.primaryColor.withOpacity(0.08)),
+                isCurved: true, color: AppConstants.primaryColor, barWidth: 2, dotData: FlDotData(show: false),
+                belowBarData: BarAreaData(show: true, color: AppConstants.primaryColor.withOpacity(0.06)),
               ),
               if (currentHour < 23)
                 LineChartBarData(
                   spots: List.generate(24 - currentHour, (i) { final h = currentHour + i; return FlSpot(h.toDouble(), w.hourlyTemperatures[h]); }),
-                  isCurved: true, color: Colors.grey.shade400, barWidth: 2, dotData: FlDotData(show: false), dashArray: [6, 4],
+                  isCurved: true, color: context.subtleText, barWidth: 2, dotData: FlDotData(show: false), dashArray: [6, 4],
                 ),
             ],
           )),
@@ -185,117 +206,121 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
     );
   }
 
+  Widget _legend(Color color, String label) => Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 12, height: 3, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: context.mutedText)),
+      ]);
+
   // ── 16-DAY FORECAST TAB ──
   Widget _buildForecastTab() {
-    if (_forecast.isEmpty) return const Center(child: Text('Forecast unavailable'));
-    return Column(children: [
-      // Temperature range chart
-      Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('16-Day Temperature Range', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 140,
-            child: LineChart(LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28, interval: 5, getTitlesWidget: (v, _) => Text('${v.toInt()}°', style: TextStyle(fontSize: 9, color: Theme.of(context).cardColor)))),
-                bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 3, getTitlesWidget: (v, _) {
-                  final idx = v.toInt();
-                  if (idx >= 0 && idx < _forecast.length && idx % 3 == 0) return Text(DateFormat('d/M').format(_forecast[idx].date), style: TextStyle(fontSize: 8, color: Theme.of(context).cardColor));
-                  return const Text('');
-                })),
-              ),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(spots: _forecast.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.maxTemp)).toList(), isCurved: true, color: Colors.red.shade400, barWidth: 2, dotData: FlDotData(show: false)),
-                LineChartBarData(spots: _forecast.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.minTemp)).toList(), isCurved: true, color: Colors.blue.shade400, barWidth: 2, dotData: FlDotData(show: false)),
-              ],
-            )),
-          ),
-          const SizedBox(height: 8),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(width: 10, height: 3, color: Colors.red.shade400), const SizedBox(width: 4), Text('Max', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-            const SizedBox(width: 16),
-            Container(width: 10, height: 3, color: Colors.blue.shade400), const SizedBox(width: 4), Text('Min', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-          ]),
-        ]),
-      ),
-      // Daily forecast list
-      Expanded(
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: _forecast.length,
-          itemBuilder: (ctx, i) => _buildDayCard(_forecast[i], i == 0),
-        ),
-      ),
-    ]);
+    if (_forecast.isEmpty) return const EmptyState(icon: Icons.cloud_off_outlined, title: 'Forecast unavailable');
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppConstants.pagePadding),
+      itemCount: _forecast.length + 1,
+      itemBuilder: (ctx, i) {
+        if (i == 0) {
+          // Temperature range chart
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: AppCard(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Temperature range · 16 days', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 140,
+                  child: LineChart(LineChartData(
+                    gridData: FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28, interval: 5, getTitlesWidget: (v, _) => _axisLabel('${v.toInt()}°'))),
+                      bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 3, getTitlesWidget: (v, _) {
+                        final idx = v.toInt();
+                        if (idx >= 0 && idx < _forecast.length && idx % 3 == 0) return _axisLabel(DateFormat('d/M').format(_forecast[idx].date));
+                        return const Text('');
+                      })),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(spots: _forecast.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.maxTemp)).toList(), isCurved: true, color: _maxColor, barWidth: 2, dotData: FlDotData(show: false)),
+                      LineChartBarData(spots: _forecast.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.minTemp)).toList(), isCurved: true, color: _minColor, barWidth: 2, dotData: FlDotData(show: false)),
+                    ],
+                  )),
+                ),
+                const SizedBox(height: 8),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  _legend(_maxColor, 'Max'),
+                  const SizedBox(width: 16),
+                  _legend(_minColor, 'Min'),
+                ]),
+              ]),
+            ),
+          );
+        }
+        return _buildDayCard(_forecast[i - 1], i == 1);
+      },
+    );
   }
 
   Widget _buildDayCard(DailyForecast d, bool isToday) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isToday ? AppConstants.primaryColor.withOpacity(0.05) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isToday ? AppConstants.primaryColor.withOpacity(0.3) : Colors.grey.shade100),
-      ),
-      child: Row(children: [
-        SizedBox(width: 50, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(isToday ? 'Today' : DateFormat('EEE').format(d.date), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isToday ? AppConstants.primaryColor : Colors.black87)),
-          Text(DateFormat('d MMM').format(d.date), style: TextStyle(fontSize: 10, color: Theme.of(context).cardColor)),
-        ])),
-        const SizedBox(width: 8),
-        Text(d.icon, style: const TextStyle(fontSize: 28)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(d.condition, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          if (d.precipProbability > 0) Text('🌧 ${d.precipProbability}% rain', style: TextStyle(fontSize: 10, color: Colors.blue.shade600)),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('${d.maxTemp.toStringAsFixed(0)}°', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: d.isHeatStress ? Colors.red : Colors.black87)),
-          Text('${d.minTemp.toStringAsFixed(0)}°', style: TextStyle(fontSize: 13, color: Colors.blue.shade400)),
-        ]),
-        if (d.isHeatStress) ...[
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        borderColor: isToday ? AppConstants.primaryColor.withOpacity(0.4) : null,
+        child: Row(children: [
+          SizedBox(width: 56, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(isToday ? 'Today' : DateFormat('EEE').format(d.date), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: isToday ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface)),
+            Text(DateFormat('d MMM').format(d.date), style: TextStyle(fontSize: 11, color: context.mutedText)),
+          ])),
           const SizedBox(width: 8),
-          const Icon(Icons.warning_amber, color: Colors.orange, size: 16),
-        ],
-      ]),
+          Icon(weatherIcon(d.weatherCode), size: 24, color: context.mutedText),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(d.condition, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            if (d.precipProbability > 0) Text('${d.precipProbability}% chance of rain', style: TextStyle(fontSize: 11, color: context.mutedText)),
+          ])),
+          if (d.isHeatStress) ...[
+            const Icon(Icons.warning_amber_rounded, color: AppConstants.warningColor, size: 16),
+            const SizedBox(width: 8),
+          ],
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('${d.maxTemp.toStringAsFixed(0)}°', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: d.isHeatStress ? AppConstants.dangerColor : Theme.of(context).colorScheme.onSurface)),
+            Text('${d.minTemp.toStringAsFixed(0)}°', style: TextStyle(fontSize: 13, color: context.mutedText)),
+          ]),
+        ]),
+      ),
     );
   }
 
   // ── COMPARE TAB (Multi-Model) ──
   Widget _buildCompareTab() {
-    if (_multiModel.isEmpty) return const Center(child: Text('Loading models...'));
+    if (_multiModel.isEmpty) return const PremiumLoading(message: 'Loading models…');
 
     final models = _multiModel.entries.toList();
-    final colors = [Colors.teal, Colors.orange, Colors.purple, Colors.indigo];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppConstants.pagePadding),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: AppConstants.infoColor.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+            border: Border.all(color: AppConstants.infoColor.withOpacity(0.2)),
+          ),
           child: Row(children: [
-            const Icon(Icons.info_outline, color: Colors.blue, size: 18),
-            const SizedBox(width: 8),
-            Expanded(child: Text('Comparing 3 weather models to verify accuracy. If forecasts agree, confidence is high.', style: TextStyle(fontSize: 11, color: Colors.blue.shade800))),
+            const Icon(Icons.info_outline, color: AppConstants.infoColor, size: 18),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Comparing weather models. When forecasts agree, confidence is high.', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)))),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         // Max temp comparison chart
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).dividerColor)),
+        AppCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Max Temperature Comparison', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text('Max temperature by model', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 12),
             SizedBox(
               height: 180,
@@ -304,11 +329,11 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
                 titlesData: FlTitlesData(
                   topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28, interval: 5, getTitlesWidget: (v, _) => Text('${v.toInt()}°', style: TextStyle(fontSize: 9, color: Theme.of(context).cardColor)))),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28, interval: 5, getTitlesWidget: (v, _) => _axisLabel('${v.toInt()}°'))),
                   bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 3, getTitlesWidget: (v, _) {
                     final bestMatch = _multiModel['Best Match'] ?? [];
                     final idx = v.toInt();
-                    if (idx >= 0 && idx < bestMatch.length && idx % 3 == 0) return Text(DateFormat('d/M').format(bestMatch[idx].date), style: TextStyle(fontSize: 8, color: Theme.of(context).cardColor));
+                    if (idx >= 0 && idx < bestMatch.length && idx % 3 == 0) return _axisLabel(DateFormat('d/M').format(bestMatch[idx].date));
                     return const Text('');
                   })),
                 ),
@@ -317,22 +342,18 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
                   final data = models[mi].value;
                   return LineChartBarData(
                     spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.maxTemp)).toList(),
-                    isCurved: true, color: colors[mi], barWidth: 2, dotData: FlDotData(show: false),
+                    isCurved: true, color: _modelColors[mi % _modelColors.length], barWidth: 2, dotData: FlDotData(show: false),
                   );
                 }),
               )),
             ),
             const SizedBox(height: 12),
-            Wrap(spacing: 16, children: List.generate(models.length, (i) => Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 10, height: 3, color: colors[i]), const SizedBox(width: 4),
-              Text(models[i].key, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7))),
-            ]))),
+            Wrap(spacing: 16, runSpacing: 8, children: List.generate(models.length, (i) => _legend(_modelColors[i % _modelColors.length], models[i].key))),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.sectionGap),
         // Day-by-day comparison table
-        const Text('Day-by-Day Model Comparison', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 8),
+        const SectionHeader('Day by day'),
         ..._buildComparisonCards(),
       ]),
     );
@@ -350,37 +371,47 @@ class _WeatherScreenState extends State<WeatherScreen> with SingleTickerProvider
       final g = i < gfs.length ? gfs[i] : null;
       final e = i < ecmwf.length ? ecmwf[i] : null;
       final o = i < owm.length ? owm[i] : null;
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: Theme.of(context).dividerColor)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${DateFormat('EEE, MMM d').format(bm.date)} ${bm.icon}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 8),
-          Row(children: [
-            _modelChip('Best', bm.maxTemp, bm.minTemp, Colors.teal),
-            if (g != null) const SizedBox(width: 4),
-            if (g != null) _modelChip('GFS', g.maxTemp, g.minTemp, Colors.orange),
-            if (e != null) const SizedBox(width: 4),
-            if (e != null) _modelChip('ECMWF', e.maxTemp, e.minTemp, Colors.purple),
-            if (o != null) const SizedBox(width: 4),
-            if (o != null) _modelChip('OWM', o.maxTemp, o.minTemp, Colors.indigo),
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: AppCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(weatherIcon(bm.weatherCode), size: 16, color: context.mutedText),
+              const SizedBox(width: 6),
+              Text(DateFormat('EEE, MMM d').format(bm.date), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              _modelChip('Best', bm.maxTemp, bm.minTemp),
+              if (g != null) const SizedBox(width: 6),
+              if (g != null) _modelChip('GFS', g.maxTemp, g.minTemp),
+              if (e != null) const SizedBox(width: 6),
+              if (e != null) _modelChip('ECMWF', e.maxTemp, e.minTemp),
+              if (o != null) const SizedBox(width: 6),
+              if (o != null) _modelChip('OWM', o.maxTemp, o.minTemp),
+            ]),
           ]),
-        ]),
+        ),
       );
     });
   }
 
-  Widget _modelChip(String model, double max, double min, Color color) {
+  Widget _modelChip(String model, double max, double min) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-        decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
         child: Column(children: [
-          Text(model, style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: color)),
-          Text('${max.toStringAsFixed(0)}°/${min.toStringAsFixed(0)}°', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+          Text(model, style: TextStyle(fontSize: 10, color: context.mutedText)),
+          const SizedBox(height: 2),
+          Text('${max.toStringAsFixed(0)}° / ${min.toStringAsFixed(0)}°', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ]),
       ),
     );
   }
 }
+

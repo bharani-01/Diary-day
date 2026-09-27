@@ -86,7 +86,7 @@ class NotificationService {
       if (startReminderTime.isAfter(DateTime.now())) {
         await scheduleNotification(
           id: id.hashCode,
-          title: '🐄 Task Starting Soon',
+          title: 'Task Starting Soon',
           body: 'Starting at ${startTime.hour}:${startTime.minute}: $task',
           scheduledDate: startReminderTime,
         );
@@ -225,7 +225,7 @@ class NotificationService {
     // Morning Shift
     await _notifications.zonedSchedule(
       1001,
-      '☀️ Morning Milk Shift',
+      'Morning Milk Shift',
       'Time to enter morning milk production data!',
       _nextInstanceOfTime(morningHour, morningMin),
       const NotificationDetails(
@@ -239,7 +239,7 @@ class NotificationService {
     // Evening Shift
     await _notifications.zonedSchedule(
       1002,
-      '🌙 Evening Milk Shift',
+      'Evening Milk Shift',
       'Time to enter evening milk production data!',
       _nextInstanceOfTime(eveningHour, eveningMin),
       const NotificationDetails(
@@ -270,14 +270,14 @@ class NotificationService {
     if (Platform.isWindows) {
       await showImmediateNotification(
         id: 999,
-        title: 'Test Alert 🔔',
+        title: 'Test Alert',
         body: 'Your notifications are working perfectly!',
       );
       return;
     }
     const androidDetails = AndroidNotificationDetails('test_channel', 'Test Notifications', importance: Importance.max, priority: Priority.high);
     const notificationDetails = NotificationDetails(android: androidDetails);
-    await _notifications.show(999, 'Test Alert 🔔', 'Your notifications are working perfectly!', notificationDetails);
+    await _notifications.show(999, 'Test Alert', 'Your notifications are working perfectly!', notificationDetails);
   }
 
   static Future<void> cancelTaskReminders(String id) async {

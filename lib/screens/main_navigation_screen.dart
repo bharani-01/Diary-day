@@ -104,7 +104,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           
           await NotificationService.showImmediateNotification(
             id: id.hashCode,
-            title: latest['title'] ?? '🔔 Farm Alert',
+            title: latest['title'] ?? 'Farm Alert',
             body: latest['body'] ?? '',
           );
           
