@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/cow.dart';
 import '../services/database_service.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 
 class PurchaseCowScreen extends StatefulWidget {
   const PurchaseCowScreen({super.key});
@@ -47,10 +48,8 @@ class _PurchaseCowScreenState extends State<PurchaseCowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Purchase New Cattle', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
+        title: const Text('Purchase cattle'),
         elevation: 0,
-        leading: BackButton(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -60,18 +59,22 @@ class _PurchaseCowScreenState extends State<PurchaseCowScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppConstants.infoColor.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(AppConstants.cardRadius),
+                  border: Border.all(color: AppConstants.infoColor.withOpacity(0.2)),
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.green),
+                    const Icon(Icons.info_outline, color: AppConstants.infoColor, size: 20),
                     const SizedBox(width: 12),
-                    const Expanded(child: Text('This will register the animal and add the cost to your expenses.', style: TextStyle(fontSize: 12, color: Colors.green))),
+                    Expanded(child: Text('This will register the animal and add the cost to your expenses.', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)))),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('Basic Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text('Basic information', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _tagController,
@@ -103,7 +106,7 @@ class _PurchaseCowScreenState extends State<PurchaseCowScreen> {
               TextFormField(controller: _breedController, decoration: AppConstants.inputDecoration('Breed (e.g., Jersey, HF)')),
               
               const SizedBox(height: 32),
-              const Text('Purchase Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text('Purchase details', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _sourceController, 
@@ -128,16 +131,12 @@ class _PurchaseCowScreenState extends State<PurchaseCowScreen> {
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
-                height: 55,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _savePurchase,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.primaryColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
+                  style: primaryButtonStyle(),
                   child: _isSaving 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Confirm Purchase', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ? const ButtonSpinner()
+                    : const Text('Confirm purchase'),
                 ),
               ),
             ],

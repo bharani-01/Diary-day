@@ -8,6 +8,8 @@ import 'cow_detail_screen.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/global_error_view.dart';
 import '../widgets/cow_image.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
 
 class CowListScreen extends StatefulWidget {
   final Function(int) onMenuPressed;
@@ -48,7 +50,7 @@ class _CowListScreenState extends State<CowListScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: GlobalDrawer(currentIndex: 2, onTabSelected: widget.onMenuPressed),
       appBar: AppBar(
-        title: const Text('My Herd'),
+        title: const Text('Herd'),
         
         elevation: 0,
         
@@ -72,7 +74,7 @@ class _CowListScreenState extends State<CowListScreen> {
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius), borderSide: BorderSide.none),
               ),
             ),
           ),
@@ -88,7 +90,7 @@ class _CowListScreenState extends State<CowListScreen> {
                     onRetry: () => setState(() => _cowsStream = _db.getCowsStream()),
                   );
                 }
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) return const PremiumLoading(message: 'Loading herd…');
                 
                 _allCows = snapshot.data!;
                 List<Cow> filtered = _allCows;
@@ -122,7 +124,7 @@ class _CowListScreenState extends State<CowListScreen> {
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 240,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 0.82,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -163,8 +165,9 @@ class _CowListScreenState extends State<CowListScreen> {
               label: Text(filter),
               selected: isSelected,
               onSelected: (_) => _applyFilter(filter),
-              selectedColor: AppConstants.primaryColor.withOpacity(0.2),
-              labelStyle: TextStyle(color: isSelected ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+              showCheckmark: false,
+              selectedColor: AppConstants.primaryColor.withOpacity(0.12),
+              labelStyle: TextStyle(color: isSelected ? AppConstants.primaryColor : Theme.of(context).colorScheme.onSurface, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal),
             ),
           );
         }).toList(),
@@ -173,56 +176,34 @@ class _CowListScreenState extends State<CowListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.pets, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(_allCows.isEmpty ? 'No cows registered yet.' : 'No cows match this filter.', style: const TextStyle(color: Colors.grey)),
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.pets_outlined,
+      title: _allCows.isEmpty ? 'No cows registered yet' : 'No cows match this filter',
+      message: _allCows.isEmpty ? 'Add your first animal with the + button.' : 'Try a different filter or search.',
     );
   }
 
   Widget _buildCowCard(Cow cow) {
+    final healthy = cow.healthStatus == 'Healthy';
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
+      decoration: AppConstants.cardDecoration(context),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: CowImage(url: cow.imageUrl, width: double.infinity),
-            ),
+            child: CowImage(url: cow.imageUrl, width: double.infinity),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(cow.name != null ? '${cow.tagNumber} (${cow.name})' : cow.tagNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('${cow.dynamicCowType} • ${cow.breed ?? 'Native'}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                Text(cow.name != null ? '${cow.tagNumber} (${cow.name})' : cow.tagNumber, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                 const SizedBox(height: 2),
-                Text('Age: ${cow.formattedAge}', style: TextStyle(fontSize: 11, color: Colors.indigo.shade600, fontWeight: FontWeight.w600)),
+                Text('${cow.dynamicCowType} · ${cow.breed ?? 'Native'} · ${cow.formattedAge}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.mutedText)),
                 const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: cow.healthStatus == 'Healthy' ? Colors.green.shade50 : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    cow.healthStatus,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: cow.healthStatus == 'Healthy' ? Colors.green : Colors.red),
-                  ),
-                ),
+                StatusPill(label: cow.healthStatus, color: healthy ? AppConstants.successColor : AppConstants.dangerColor),
               ],
             ),
           ),

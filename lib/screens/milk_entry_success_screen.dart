@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 
 class MilkEntrySuccessScreen extends StatelessWidget {
   final double quantity;
@@ -15,48 +15,44 @@ class MilkEntrySuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppConstants.containerPadding),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.network(
-                'https://assets10.lottiefiles.com/packages/lf20_qc8v1m.json',
-                width: 150,
-                height: 150,
-                repeat: false,
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Success!',
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                  color: AppConstants.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Saved $quantity Liters for $shift shift.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-              ),
-              const SizedBox(height: 64),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.pagePadding),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppConstants.successColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_rounded, size: 36, color: AppConstants.successColor),
                   ),
-                  child: const Text('Back to Dashboard', style: TextStyle(fontSize: 18)),
-                ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Entry saved',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$quantity L recorded for the $shift shift.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 15, color: context.mutedText),
+                  ),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+                    style: primaryButtonStyle(),
+                    child: const Text('Back to dashboard'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

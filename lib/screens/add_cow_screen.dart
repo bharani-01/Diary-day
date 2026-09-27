@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 import '../services/database_service.dart';
 import '../models/cow.dart';
 import '../widgets/error_dialog.dart';
@@ -190,7 +191,7 @@ class _AddCowScreenState extends State<AddCowScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Cow Photos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text('Photos', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
               const SizedBox(height: 12),
               SizedBox(
                 height: 120,
@@ -206,13 +207,13 @@ class _AddCowScreenState extends State<AddCowScreen> {
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(AppConstants.controlRadius),
+                          border: Border.all(color: Theme.of(context).dividerColor),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo, color: AppConstants.primaryColor),
+                            Icon(Icons.add_a_photo_outlined, color: AppConstants.primaryColor),
                             SizedBox(height: 4),
                             Text('Add Photo', style: TextStyle(fontSize: 12, color: AppConstants.primaryColor)),
                           ],
@@ -321,13 +322,8 @@ class _AddCowScreenState extends State<AddCowScreen> {
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: _isSaving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : Text(widget.existingCow != null ? 'Save Changes' : 'Register Cow', style: const TextStyle(fontSize: 18)),
+                style: primaryButtonStyle(),
+                child: _isSaving ? const ButtonSpinner() : Text(widget.existingCow != null ? 'Save changes' : 'Register cow'),
               ),
             ],
           ),
@@ -368,7 +364,7 @@ class _AddCowScreenState extends State<AddCowScreen> {
             },
             child: CircleAvatar(
               radius: 12,
-              backgroundColor: Colors.red.withOpacity(0.8),
+              backgroundColor: Colors.black.withOpacity(0.6),
               child: const Icon(Icons.close, size: 16, color: Colors.white),
             ),
           ),

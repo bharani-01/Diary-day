@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../models/cow.dart';
 import '../services/database_service.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
 
 class SellCowScreen extends StatefulWidget {
   const SellCowScreen({super.key});
@@ -25,15 +27,13 @@ class _SellCowScreenState extends State<SellCowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sell Cow', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
+        title: const Text('Sell cow'),
         elevation: 0,
-        leading: BackButton(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: StreamBuilder<List<Cow>>(
         stream: _db.getCowsStream(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData) return const PremiumLoading(message: 'Loading herd…');
           
           final activeCows = snapshot.data!.where((c) => c.status == 'Active').toList();
           
@@ -44,7 +44,7 @@ class _SellCowScreenState extends State<SellCowScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Select Cow to Sell', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Cow', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<Cow>(
                     value: _selectedCow,
@@ -57,7 +57,7 @@ class _SellCowScreenState extends State<SellCowScreen> {
                     validator: (val) => val == null ? 'Please select a cow' : null,
                   ),
                   const SizedBox(height: 20),
-                  const Text('Buyer Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Buyer details', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _buyerController,
@@ -90,16 +90,12 @@ class _SellCowScreenState extends State<SellCowScreen> {
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
-                    height: 55,
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _saveSale,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
+                      style: primaryButtonStyle(background: AppConstants.dangerColor),
                       child: _isSaving 
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Confirm Sale', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ? const ButtonSpinner()
+                        : const Text('Confirm sale'),
                     ),
                   ),
                 ],

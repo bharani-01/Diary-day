@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import '../models/cow.dart';
@@ -80,7 +81,7 @@ class _GlobalAddBreedingScreenState extends State<GlobalAddBreedingScreen> {
         final notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         await NotificationService.scheduleNotification(
           id: notificationId,
-          title: 'Upcoming Calving Alert 🐄',
+          title: 'Upcoming calving alert',
           body: 'Cow ${_selectedCow!.tagNumber} is expected to deliver in 7 days!',
           scheduledDate: reminderDate,
         );
@@ -104,7 +105,7 @@ class _GlobalAddBreedingScreenState extends State<GlobalAddBreedingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Record Breeding Injection')),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
         : SingleChildScrollView(
             padding: const EdgeInsets.all(AppConstants.containerPadding),
             child: Form(
@@ -112,7 +113,7 @@ class _GlobalAddBreedingScreenState extends State<GlobalAddBreedingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Select Cow 🐄', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Cow', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<Cow>(
                     value: _selectedCow,
@@ -123,61 +124,64 @@ class _GlobalAddBreedingScreenState extends State<GlobalAddBreedingScreen> {
                     validator: (val) => val == null ? 'Selection required' : null,
                   ),
                   const SizedBox(height: 24),
-                  const Text('Breeding / Injection Date 💉', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Breeding / injection date', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: _pickDate,
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).dividerColor)),
+                      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(AppConstants.controlRadius), border: Border.all(color: Theme.of(context).dividerColor)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
-                          const Icon(Icons.calendar_today, size: 20),
+                          Icon(Icons.calendar_today_outlined, size: 20, color: context.mutedText),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppConstants.primaryColor.withOpacity(0.3)),
-                    ),
-                    child: Column(
+                  AppCard(
+                    child: Row(
                       children: [
-                        const Text('Predicted Calving Date 📅', style: TextStyle(color: AppConstants.primaryColor, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text(
-                          DateFormat('MMMM d, y').format(predictedDate),
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppConstants.primaryColor),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'approx. ${predictedDate.difference(DateTime.now()).inDays} days from today',
-                          style: TextStyle(fontSize: 12, color: Colors.teal.shade700),
+                        const IconTile(Icons.event_available_outlined, color: AppConstants.primaryColor),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Predicted calving date', style: TextStyle(fontSize: 12, color: context.mutedText)),
+                              const SizedBox(height: 2),
+                              Text(
+                                DateFormat('MMMM d, y').format(predictedDate),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'About ${predictedDate.difference(DateTime.now()).inDays} days from today',
+                                style: TextStyle(fontSize: 12, color: context.mutedText),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 32),
-                  const Text('Injection Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 24),
+                  const Text('Injection details', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _detailsController,
                     decoration: InputDecoration(border: OutlineInputBorder(), fillColor: Theme.of(context).inputDecorationTheme.fillColor, filled: true),
                     maxLines: 2,
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: _isSaving ? null : _save,
-                    style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18)),
-                    child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Save Record', style: TextStyle(fontSize: 18)),
+                    style: primaryButtonStyle(),
+                    child: _isSaving ? const ButtonSpinner() : const Text('Save record'),
                   ),
                 ],
               ),

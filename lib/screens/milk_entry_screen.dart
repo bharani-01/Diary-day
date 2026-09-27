@@ -7,6 +7,7 @@ import '../models/shift_milk_entry.dart';
 import '../models/cow.dart';
 import 'milk_entry_success_screen.dart';
 import '../widgets/error_dialog.dart';
+import '../widgets/app_ui.dart';
 
 class MilkEntryScreen extends StatefulWidget {
   const MilkEntryScreen({super.key});
@@ -148,178 +149,154 @@ class _MilkEntryScreenState extends State<MilkEntryScreen> {
     super.dispose();
   }
 
+  Widget _fieldLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final muted = context.mutedText;
     return Scaffold(
-      appBar: AppBar(title: const Text('New Milk Entry')),
+      appBar: AppBar(title: Text(_isUpdate ? 'Edit milk entry' : 'New milk entry')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppConstants.containerPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Collection Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 24),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
-              trailing: const Icon(Icons.calendar_today),
-              onTap: _pickDate,
-            ),
-            const Divider(),
-            const SizedBox(height: 16),
-            const Text('Shift', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            Row(
-              children: ['Morning', 'Evening'].map((shift) {
-                final isSelected = _selectedShift == shift;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: FilterChip(
-                    label: Text(shift),
-                    selected: isSelected,
-                    onSelected: (val) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedShift = shift);
-                      _checkExistingEntry();
-                      _loadExistingEstimates();
-                    },
-                    selectedColor: AppConstants.primaryColor.withOpacity(0.2),
-                    labelStyle: TextStyle(color: isSelected ? AppConstants.primaryColor : Colors.black87),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 32),
-            const Text('Total Quantity (Liters)', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (_isChecking)
-              const LinearProgressIndicator()
-            else
-              TextField(
-                controller: _quantityController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                textInputAction: TextInputAction.next,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                decoration: InputDecoration(
-                  hintText: '0.0', suffixText: 'Liters',
-                  helperText: _isUpdate ? 'Updating existing record for this shift' : 'Adding new record',
-                  helperStyle: TextStyle(color: _isUpdate ? Colors.orange : Colors.grey),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-            const SizedBox(height: 24),
-            Row(
+        padding: const EdgeInsets.all(AppConstants.pagePadding),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Fat (%)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  TextField(controller: _fatController, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next, decoration: const InputDecoration(hintText: 'e.g., 4.0', border: OutlineInputBorder())),
-                ])),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('SNF', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  TextField(controller: _snfController, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.done, decoration: const InputDecoration(hintText: 'e.g., 8.5', border: OutlineInputBorder())),
-                ])),
-              ],
-            ),
-
-            // --- Per-Cow Estimated Breakdown ---
-            const SizedBox(height: 28),
-            InkWell(
-              onTap: () => setState(() => _showEstimates = !_showEstimates),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: _showEstimates ? AppConstants.primaryColor.withOpacity(0.08) : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _showEstimates ? AppConstants.primaryColor.withOpacity(0.3) : Colors.grey.shade200),
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const Icon(Icons.calendar_today_outlined),
+                    title: const Text('Date'),
+                    subtitle: Text(DateFormat('EEEE, MMM d, y').format(_selectedDate)),
+                    trailing: Icon(Icons.chevron_right, color: muted),
+                    onTap: _pickDate,
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 20),
+                _fieldLabel('Shift'),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'Morning', label: Text('Morning'), icon: Icon(Icons.wb_twilight_outlined)),
+                    ButtonSegment(value: 'Evening', label: Text('Evening'), icon: Icon(Icons.nights_stay_outlined)),
+                  ],
+                  selected: {_selectedShift},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (s) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedShift = s.first);
+                    _checkExistingEntry();
+                    _loadExistingEstimates();
+                  },
+                ),
+                const SizedBox(height: 20),
+                _fieldLabel('Total quantity'),
+                if (_isChecking)
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: LinearProgressIndicator())
+                else
+                  TextField(
+                    controller: _quantityController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    textInputAction: TextInputAction.next,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+                    decoration: InputDecoration(
+                      hintText: '0.0', suffixText: 'litres',
+                      helperText: _isUpdate ? 'A record already exists for this shift. Saving will update it.' : 'New record for this shift',
+                      helperStyle: TextStyle(color: _isUpdate ? AppConstants.warningColor : muted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(_showEstimates ? Icons.expand_less : Icons.expand_more, color: AppConstants.primaryColor),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      _fieldLabel('Fat (%)'),
+                      TextField(controller: _fatController, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.next, decoration: InputDecoration(hintText: 'e.g. 4.0', border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)))),
+                    ])),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Per-Cow Estimates', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      Text('Optional: estimate each cow\'s contribution', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                      _fieldLabel('SNF'),
+                      TextField(controller: _snfController, keyboardType: const TextInputType.numberWithOptions(decimal: true), textInputAction: TextInputAction.done, decoration: InputDecoration(hintText: 'e.g. 8.5', border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)))),
                     ])),
-                    Icon(Icons.science_outlined, color: Colors.grey.shade400, size: 20),
                   ],
                 ),
-              ),
-            ),
-            if (_showEstimates && _milkingCows.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                ),
-                child: Column(
-                  children: _milkingCows.map((cow) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 100,
-                            child: Text('${cow.tagNumber}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis),
-                          ),
-                          if (cow.name != null)
-                            Expanded(child: Text(cow.name!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)), overflow: TextOverflow.ellipsis))
-                          else
-                            const Spacer(),
-                          SizedBox(
-                            width: 80,
-                            child: TextField(
-                              controller: _cowEstimateControllers[cow.id],
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                              decoration: InputDecoration(
-                                hintText: '0.0',
-                                hintStyle: TextStyle(color: Colors.grey.shade300),
-                                suffixText: 'L',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
+
+                // --- Per-Cow Estimated Breakdown ---
+                const SizedBox(height: 24),
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        onTap: () => setState(() => _showEstimates = !_showEstimates),
+                        title: const Text('Per-cow estimates', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                        subtitle: Text('Optional. Does not change the total above.', style: TextStyle(fontSize: 12, color: muted)),
+                        trailing: Icon(_showEstimates ? Icons.expand_less : Icons.expand_more, color: muted),
                       ),
-                    );
-                  }).toList(),
+                      if (_showEstimates && _milkingCows.isNotEmpty) ...[
+                        const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: Column(
+                            children: _milkingCows.map((cow) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text('${cow.tagNumber}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis),
+                                    ),
+                                    if (cow.name != null)
+                                      Expanded(child: Text(cow.name!, style: TextStyle(fontSize: 12, color: muted), overflow: TextOverflow.ellipsis))
+                                    else
+                                      const Spacer(),
+                                    SizedBox(
+                                      width: 88,
+                                      child: TextField(
+                                        controller: _cowEstimateControllers[cow.id],
+                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                        decoration: InputDecoration(
+                                          hintText: '0.0',
+                                          hintStyle: TextStyle(color: context.subtleText),
+                                          suffixText: 'L',
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                          isDense: true,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('💡 These are estimates and don\'t affect the total above', style: TextStyle(fontSize: 11, color: Theme.of(context).cardColor, fontStyle: FontStyle.italic)),
-              ),
-            ],
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSaving || _isChecking ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: _isSaving || _isChecking ? null : _save,
+                  style: primaryButtonStyle(),
+                  child: _isSaving
+                      ? const ButtonSpinner()
+                      : Text(_isUpdate ? 'Update entry' : 'Save entry'),
                 ),
-                child: _isSaving
-                   ? const CircularProgressIndicator(color: Colors.white)
-                   : Text(_isUpdate ? 'Update Entry' : 'Save Entry', style: const TextStyle(fontSize: 18)),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+

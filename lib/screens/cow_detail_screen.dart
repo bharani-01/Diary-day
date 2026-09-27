@@ -7,6 +7,7 @@ import '../models/health_record.dart';
 import '../services/notification_service.dart';
 import '../widgets/premium_loading.dart';
 import '../widgets/cow_image.dart';
+import '../widgets/app_ui.dart';
 import '../services/database_service.dart';
 import '../services/report_service.dart';
 import 'add_breeding_record_screen.dart';
@@ -79,6 +80,10 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
+            backgroundColor: AppConstants.primaryColor,
+            foregroundColor: Colors.white,
+            iconTheme: const IconThemeData(color: Colors.white),
+            shape: const Border(),
             actions: [
               IconButton(
                 icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
@@ -135,8 +140,25 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(_currentCow.name != null ? '${_currentCow.tagNumber} "${_currentCow.name}"' : _currentCow.tagNumber, style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold)),
-              background: _buildHeaderBackground(),
+              title: Text(_currentCow.name != null ? '${_currentCow.tagNumber} "${_currentCow.name}"' : _currentCow.tagNumber, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 17)),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _buildHeaderBackground(),
+                  const IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.25, 0.65, 1.0],
+                          colors: [Color(0x55000000), Color(0x00000000), Color(0x00000000), Color(0x88000000)],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -177,10 +199,8 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
     
     if (urls.isEmpty) {
       return Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [AppConstants.primaryColor, Colors.teal.shade700]),
-        ),
-        child: const Icon(Icons.pets, size: 80, color: Colors.white24),
+        color: AppConstants.primaryColor,
+        child: const Icon(Icons.pets_outlined, size: 72, color: Colors.white24),
       );
     }
 
@@ -209,7 +229,7 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
-                color: _currentPage == index ? AppConstants.primaryColor : Colors.white70,
+                color: _currentPage == index ? Colors.white : Colors.white54,
               ),
             )),
           ),
@@ -219,22 +239,17 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
   }
 
   Widget _buildProfileCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
+    final healthy = _currentCow.healthStatus == 'Healthy';
+    return AppCard(
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatItem('Type / Breed', '${_currentCow.dynamicCowType} • ${_currentCow.breed ?? 'Native'}', Icons.category),
-              _buildStatItem('Age', _currentCow.formattedAge, Icons.calendar_today),
-              _buildStatItem('Health', _currentCow.healthStatus, Icons.favorite, color: Colors.green),
-              _buildStatItem('Status', _currentCow.isDry ? 'Dry' : 'Milking', _currentCow.isDry ? Icons.pause_circle_outline : Icons.play_circle_outline, color: _currentCow.isDry ? Colors.orange : Colors.blue),
+              Expanded(child: _buildStatItem('Type · breed', '${_currentCow.dynamicCowType} · ${_currentCow.breed ?? 'Native'}', Icons.category_outlined)),
+              Expanded(child: _buildStatItem('Age', _currentCow.formattedAge, Icons.cake_outlined)),
+              Expanded(child: _buildStatItem('Health', _currentCow.healthStatus, healthy ? Icons.favorite_border : Icons.healing_outlined, color: healthy ? AppConstants.successColor : AppConstants.dangerColor)),
+              Expanded(child: _buildStatItem('Status', _currentCow.isDry ? 'Dry' : 'Milking', _currentCow.isDry ? Icons.pause_circle_outline : Icons.water_drop_outlined, color: _currentCow.isDry ? AppConstants.warningColor : null)),
             ],
           ),
           if (_motherCow != null) ...[
@@ -256,21 +271,21 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.pets, color: Colors.purple, size: 20),
-                        const SizedBox(width: 8),
+                        Icon(Icons.pets_outlined, color: context.mutedText, size: 20),
+                        const SizedBox(width: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Mother', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                            Text('Mother', style: TextStyle(fontSize: 11, color: context.mutedText)),
                             Text(
                               _motherCow!.name != null ? '${_motherCow!.tagNumber} - ${_motherCow!.name}' : _motherCow!.tagNumber,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purple),
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppConstants.primaryColor),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    Icon(Icons.chevron_right, color: context.mutedText),
                   ],
                 ),
               ),
@@ -284,22 +299,25 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
   Widget _buildStatItem(String label, String value, IconData icon, {Color? color}) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: color ?? Colors.grey),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Icon(icon, size: 20, color: color ?? context.mutedText),
+        const SizedBox(height: 6),
+        Text(value, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: color)),
+        const SizedBox(height: 2),
+        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: context.mutedText)),
       ],
     );
   }
 
   Widget _buildHistoryTabs() {
     return Container(
-      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor))),
       child: TabBar(
         controller: _tabController,
-        indicator: BoxDecoration(color: AppConstants.primaryColor, borderRadius: BorderRadius.circular(10)),
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey,
+        indicatorColor: AppConstants.primaryColor,
+        indicatorWeight: 2,
+        labelColor: AppConstants.primaryColor,
+        unselectedLabelColor: context.mutedText,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
         indicatorSize: TabBarIndicatorSize.tab,
         tabs: const [
           Tab(text: 'Breeding'),
@@ -323,7 +341,6 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
           title: 'Breeding Event',
           subtitle: r.details ?? 'No details provided',
           icon: Icons.child_care,
-          color: Colors.blue,
         );
       },
     );
@@ -342,8 +359,7 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
           date: r.date,
           title: r.treatment,
           subtitle: '${r.type} • ${r.administeredBy ?? "Self"}',
-          icon: isVaccine ? Icons.vaccines : Icons.medication,
-          color: isVaccine ? Colors.teal : Colors.orange,
+          icon: isVaccine ? Icons.vaccines_outlined : Icons.medication_outlined,
           onTap: () {
             Navigator.push(
               context,
@@ -360,34 +376,25 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
     required String title, 
     required String subtitle, 
     required IconData icon, 
-    required Color color,
     VoidCallback? onTap,
   }) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Theme.of(context).dividerColor)),
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color, size: 20)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: Text(DateFormat('MMM d').format(date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: ListTile(
+          onTap: onTap,
+          leading: IconTile(icon, size: 36),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: context.mutedText)),
+          trailing: Text(DateFormat('MMM d, y').format(date), style: TextStyle(fontSize: 12, color: context.mutedText)),
+        ),
       ),
     );
   }
 
   Widget _emptyState(String msg) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history_toggle_off, size: 48, color: Colors.grey.shade300),
-          const SizedBox(height: 8),
-          Text(msg, style: const TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
+    return EmptyState(icon: Icons.history_toggle_off, title: msg);
   }
 
   Widget _buildTimelineTab() {
@@ -396,23 +403,23 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const PremiumLoading(message: 'Building Timeline...');
         final events = snapshot.data ?? [];
-        if (events.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.timeline, size: 64, color: Colors.grey.shade300), const SizedBox(height: 16), Text('No events recorded yet', style: TextStyle(fontSize: 16, color: Theme.of(context).cardColor))]));
+        if (events.isEmpty) return const EmptyState(icon: Icons.timeline, title: 'No events recorded yet');
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: events.length,
           itemBuilder: (context, index) {
             final e = events[index];
             final type = e['type'] as String;
-            Color color;
             IconData icon;
             switch (type) {
-              case 'health': color = Colors.orange; icon = Icons.medication; break;
-              case 'breeding': color = Colors.blue; icon = Icons.child_care; break;
-              case 'milk': color = Colors.teal; icon = Icons.water_drop; break;
-              case 'expense': color = Colors.red; icon = Icons.currency_rupee; break;
-              case 'calf': color = Colors.pink; icon = Icons.child_friendly; break;
-              default: color = Colors.grey; icon = Icons.event; break;
+              case 'health': icon = Icons.medication_outlined; break;
+              case 'breeding': icon = Icons.child_care; break;
+              case 'milk': icon = Icons.water_drop_outlined; break;
+              case 'expense': icon = Icons.currency_rupee; break;
+              case 'calf': icon = Icons.child_friendly_outlined; break;
+              default: icon = Icons.event_outlined; break;
             }
+            final lineColor = Theme.of(context).dividerColor;
             return IntrinsicHeight(
               child: Row(
                 children: [
@@ -421,29 +428,27 @@ class _CowDetailScreenState extends State<CowDetailScreen> with SingleTickerProv
                     width: 40,
                     child: Column(
                       children: [
-                        if (index > 0) Expanded(child: Container(width: 2, color: Colors.grey.shade200)),
-                        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                        if (index < events.length - 1) Expanded(child: Container(width: 2, color: Colors.grey.shade200)),
+                        if (index > 0) Expanded(child: Container(width: 1.5, color: lineColor)),
+                        Container(width: 10, height: 10, decoration: BoxDecoration(color: AppConstants.primaryColor, shape: BoxShape.circle, border: Border.all(color: Theme.of(context).cardColor, width: 2))),
+                        if (index < events.length - 1) Expanded(child: Container(width: 1.5, color: lineColor)),
                       ],
                     ),
                   ),
                   // Event card
                   Expanded(
-                    child: Card(
-                      elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: color.withOpacity(0.2))),
-                      child: Padding(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: AppCard(
                         padding: const EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            CircleAvatar(backgroundColor: color.withOpacity(0.1), radius: 18, child: Icon(icon, color: color, size: 18)),
+                            IconTile(icon, size: 34),
                             const SizedBox(width: 12),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(e['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              if ((e['subtitle'] as String).isNotEmpty) Text(e['subtitle'], style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                              Text(e['title'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                              if ((e['subtitle'] as String).isNotEmpty) Text(e['subtitle'], style: TextStyle(fontSize: 12, color: context.mutedText)),
                             ])),
-                            Text(DateFormat('MMM d').format(e['date']), style: TextStyle(fontSize: 11, color: Theme.of(context).cardColor)),
+                            Text(DateFormat('MMM d').format(e['date']), style: TextStyle(fontSize: 12, color: context.mutedText)),
                           ],
                         ),
                       ),

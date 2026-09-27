@@ -7,6 +7,9 @@ import '../services/database_service.dart';
 import 'cow_detail_screen.dart';
 import '../widgets/global_drawer.dart';
 import '../widgets/cow_image.dart';
+import '../widgets/app_ui.dart';
+import '../widgets/premium_loading.dart';
+import '../constants.dart';
 
 class CalvingAlertsScreen extends StatefulWidget {
   final Function(int) onMenuPressed;
@@ -71,13 +74,13 @@ class _CalvingAlertsScreenState extends State<CalvingAlertsScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: GlobalDrawer(currentIndex: 4, onTabSelected: widget.onMenuPressed),
       appBar: AppBar(
-        title: const Text('Maternity & Calving Alerts'),
+        title: const Text('Calving alerts'),
         
         elevation: 0,
         
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const PremiumLoading(message: 'Loading calving alerts…')
           : _calvingAlerts.isEmpty
               ? _buildEmptyState()
               : _buildAlertsList(),
@@ -85,23 +88,10 @@ class _CalvingAlertsScreenState extends State<CalvingAlertsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.notification_important_outlined, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            'No upcoming calvings scheduled',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add breeding records to track maternity',
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-          ),
-        ],
-      ),
+    return const EmptyState(
+      icon: Icons.event_available_outlined,
+      title: 'No upcoming calvings',
+      message: 'Add breeding records to track expected calving dates.',
     );
   }
 
@@ -124,100 +114,67 @@ class _CalvingAlertsScreenState extends State<CalvingAlertsScreen> {
             );
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: AppConstants.cardDecoration(context),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
                 Stack(
                   children: [
                     // Cow Image
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                      child: CowImage(url: cow.imageUrl, height: 180, width: double.infinity, placeholderIconSize: 60),
-                    ),
+                    CowImage(url: cow.imageUrl, height: 160, width: double.infinity, placeholderIconSize: 56),
                     // Days Remaining Badge
                     Positioned(
-                      top: 16,
-                      right: 16,
+                      top: 12,
+                      right: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: _getStatusColor(daysToCalving),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)
-                          ],
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          daysToCalving <= 0 ? 'Due Today!' : '$daysToCalving Days Left',
-                          style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 12),
+                          daysToCalving <= 0 ? 'Due today' : '$daysToCalving days left',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
                         ),
                       ),
                     ),
                     // Tag Number
                     Positioned(
-                      bottom: 16,
-                      left: 16,
+                      bottom: 12,
+                      left: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'Tag: ${cow.tagNumber}',
-                          style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 14),
+                          'Tag ${cow.tagNumber}',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
                         ),
                       ),
                     ),
                   ],
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Expected Calving', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat('EEEE, MMM d, y').format(calvingDate),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.event_note, color: Colors.orange),
-                          ),
-                        ],
+                      Text('Expected calving', style: TextStyle(color: context.mutedText, fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('EEEE, MMM d, y').format(calvingDate),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Row(
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          _buildDetailChip(Icons.calendar_today, 'Bred: ${DateFormat('MMM d').format(alert['breedingDate'])}'),
-                          const SizedBox(width: 12),
-                          _buildDetailChip(Icons.monitor_heart, cow.breed ?? 'Unknown Breed'),
+                          _buildDetailChip(Icons.calendar_today_outlined, 'Bred ${DateFormat('MMM d').format(alert['breedingDate'])}'),
+                          _buildDetailChip(Icons.pets_outlined, cow.breed ?? 'Unknown breed'),
                         ],
                       ),
                     ],
@@ -233,26 +190,25 @@ class _CalvingAlertsScreenState extends State<CalvingAlertsScreen> {
 
   Widget _buildDetailChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          Icon(icon, size: 14, color: context.mutedText),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(color: context.mutedText, fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
   Color _getStatusColor(int days) {
-    if (days <= 7) return Colors.red.shade600;
-    if (days <= 30) return Colors.orange.shade600;
-    return Colors.teal.shade600;
+    if (days <= 7) return AppConstants.dangerColor;
+    if (days <= 30) return AppConstants.warningColor;
+    return AppConstants.primaryColor;
   }
 }

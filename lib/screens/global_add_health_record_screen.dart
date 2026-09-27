@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
+import '../widgets/app_ui.dart';
 import '../models/health_record.dart';
 import '../models/cow.dart';
 import '../services/database_service.dart';
@@ -98,7 +99,7 @@ class _GlobalAddHealthRecordScreenState extends State<GlobalAddHealthRecordScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Select Cow 🐄', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Cow', style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<Cow>(
                       value: _selectedCow,
@@ -110,8 +111,8 @@ class _GlobalAddHealthRecordScreenState extends State<GlobalAddHealthRecordScree
                     ),
                     const SizedBox(height: 24),
                     
-                    const Text('Medical Event Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 24),
+                    const Text('Medical event', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
                     
                     DropdownButtonFormField<String>(
                       value: _type,
@@ -136,7 +137,7 @@ class _GlobalAddHealthRecordScreenState extends State<GlobalAddHealthRecordScree
 
                     ListTile(
                       tileColor: Theme.of(context).cardColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Theme.of(context).dividerColor)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius), side: BorderSide(color: Theme.of(context).dividerColor)),
                       title: const Text('Date of Treatment'),
                       subtitle: Text(DateFormat('MMM d, yyyy').format(_selectedDate)),
                       trailing: const Icon(Icons.calendar_today),
@@ -163,14 +164,10 @@ class _GlobalAddHealthRecordScreenState extends State<GlobalAddHealthRecordScree
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppConstants.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
+                        style: primaryButtonStyle(),
                         child: _isSaving 
-                          ? const CircularProgressIndicator(color: Colors.white) 
-                          : Text('Save Medical Record', style: TextStyle(color: Theme.of(context).cardColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                          ? const ButtonSpinner() 
+                          : const Text('Save medical record'),
                       ),
                     ),
                   ],

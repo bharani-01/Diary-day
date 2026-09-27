@@ -160,6 +160,35 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+/// Full-width primary action (Save, Update, Confirm).
+ButtonStyle primaryButtonStyle({Color background = AppConstants.primaryColor}) {
+  return ElevatedButton.styleFrom(
+    backgroundColor: background,
+    foregroundColor: Colors.white,
+    disabledBackgroundColor: background.withOpacity(0.4),
+    disabledForegroundColor: Colors.white,
+    elevation: 0,
+    minimumSize: const Size.fromHeight(52),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.controlRadius)),
+    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  );
+}
+
+/// Spinner sized to sit inside a [primaryButtonStyle] button while saving.
+class ButtonSpinner extends StatelessWidget {
+  const ButtonSpinner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 20,
+      height: 20,
+      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+    );
+  }
+}
+
 /// Material icon for a WMO weather code (same buckets as `WeatherData.condition`).
 IconData weatherIcon(int code) {
   if (code == 0) return Icons.wb_sunny_outlined;
